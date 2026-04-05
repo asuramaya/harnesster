@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>harnesster</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;color:#c9d1d9;font-family:'SF Mono','Fira Code',monospace;font-size:13px;padding:20px 40px;max-width:1400px;margin:0 auto}
+h1{color:#f0f6fc;font-size:28px}
+.sub{color:#8b949e;font-size:11px;margin:4px 0 20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:12px;cursor:pointer;transition:border-color 0.2s}
+.card:hover{border-color:#58a6ff}
+.v{font-size:24px;color:#f0f6fc;font-weight:bold}
+.l{color:#8b949e;font-size:10px;margin-top:2px}
+.warn{border-color:#d29922}.warn .v{color:#d29922}
+.alert{background:#2d1b1b;border:1px solid #6e3030;border-radius:4px;padding:10px;margin:12px 0;color:#f85149;font-size:11px}
+.dev{color:#d29922;font-size:10px;margin-bottom:16px}
+h2{color:#8b949e;font-size:12px;margin-top:20px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1.5px;cursor:pointer;user-select:none}
+h2:hover{color:#c9d1d9}
+.panel{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:14px;margin-bottom:12px;display:none;max-height:70vh;overflow-y:auto}
+.panel.open{display:block}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;color:#8b949e;font-size:9px;text-transform:uppercase;letter-spacing:1px;padding:4px 6px;border-bottom:1px solid #30363d;position:sticky;top:0;background:#161b22}
+td{padding:3px 6px;border-bottom:1px solid #21262d;font-size:11px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tr:hover{background:#1c2128}
+code{background:#1c2128;padding:1px 3px;border-radius:2px;font-size:10px}
+.msg{margin:3px 0;padding:4px 8px;border-left:2px solid #30363d;font-size:10px;white-space:pre-wrap;word-break:break-word}
+.msg-user{border-color:#58a6ff}.msg-assistant{border-color:#3fb950}.msg-system{border-color:#d29922}
+.role{font-size:8px;text-transform:uppercase;color:#484f58;margin-right:4px}
+.item{background:#0d1117;border:1px solid #21262d;border-radius:4px;padding:8px;margin:6px 0}
+.item-head{font-size:10px;cursor:pointer;color:#58a6ff}.item-head:hover{text-decoration:underline}
+.item-head-warn{color:#d29922}
+.item-body{display:none;max-height:400px;overflow-y:auto;margin-top:4px}
+.item-body.open{display:block}
+.bar{background:#21262d;border-radius:3px;height:20px;position:relative;overflow:hidden;margin:8px 0}
+.bar-fill{height:100%;position:absolute}
+.bar-green{background:#3fb950}.bar-red{background:#f85149}
+.stat{display:inline-block;margin-right:16px;font-size:11px}
+.stat-label{color:#8b949e;font-size:9px}
+.cnt{color:#484f58;font-size:9px;margin-left:6px}
+.search{width:100%;padding:6px 10px;background:#0d1117;border:1px solid #30363d;border-radius:4px;color:#c9d1d9;font-family:inherit;font-size:11px;margin-bottom:12px}
+.search:focus{outline:none;border-color:#58a6ff}
+.refresh{background:#161b22;border:1px solid #30363d;border-radius:4px;padding:4px 10px;color:#8b949e;font-family:inherit;font-size:10px;cursor:pointer;margin-left:8px}
+.refresh:hover{color:#f0f6fc;border-color:#58a6ff}
+.note{color:#8b949e;font-size:10px;padding:6px;background:#161b22;border:1px solid #30363d;border-radius:4px;margin:8px 0}
+</style>
+</head>
+<body>
+
+<h1>harnesster <button class="refresh" onclick="loadAll()">refresh</button></h1>
+<div class="sub" id="gen">loading...</div>
+
+<div id="app"></div>
+
+<script>
+function esc(s) {
+  if (!s) return '';
+  var el = document.createElement('span');
+  el.textContent = String(s);
+  return el.innerHTML;
+}
+
+function api(path) {
+  return fetch(path).then(function(r) { return r.json(); });
+}
+
+function tog(el) {
+  var s = el.nextElementSibling;
+  if (s) s.classList.toggle('open');
+}
+
+function togBody(el) {
+  var b = el.nextElementSibling;
+  if (b) b.classList.toggle('open');
+}
+
+function makeTable(headers, rows) {
+  var t = '<table><tr>';
+  for (var i = 0; i < headers.length; i++) t += '<th>' + headers[i] + '</th>';
+  t += '</tr>';
+  for (var i = 0; i < rows.length; i++) {
+    t += '<tr>';
+    for (var j = 0; j < rows[i].length; j++) t += '<td>' + rows[i][j] + '</td>';
+    t += '</tr>';
+  }
+  return t + '</table>';
+}
+
+function loadMessages(agentId, el) {
+  if (el.dataset.loaded) { el.classList.toggle('open'); return; }
+  el.textContent = 'loading...';
+  el.classList.add('open');
+  api('/api/messages?agent_id=' + agentId).then(function(msgs) {
+    var html = '';
+    for (var i = 0; i < msgs.length; i++) {
+      var m = msgs[i];
+      var cls = m.role === 'user' ? 'msg-user' : m.role === 'assistant' ? 'msg-assistant' : 'msg-system';
+      html += '<div class="msg ' + cls + '"><span class="role">' + esc(m.role) + '</span>' + esc(m.content) + '</div>';
+    }
+    el.innerHTML = html || 'no messages';
+    el.dataset.loaded = '1';
+  });
+}
+
+function loadAll() {
+  var app = document.getElementById('app');
+  app.innerHTML = '<div class="note">loading data...</div>';
+
+  Promise.all([
+    api('/api/summary'),
+    api('/api/tokens'),
+    api('/api/sessions'),
+    api('/api/agents?limit=50'),
+    api('/api/reminders?limit=30'),
+    api('/api/hooks?limit=50'),
+    api('/api/memory'),
+    api('/api/tasks'),
+    api('/api/telemetry?limit=100'),
+    api('/api/states'),
+    api('/api/analyze'),
+    api('/api/correlations')
+  ]).then(function(results) {
+    var sum = results[0];
+    var tok = results[1];
+    var sessions = results[2];
+    var agents = results[3];
+    var reminders = results[4];
+    var hooks = results[5];
+    var memory = results[6];
+    var tasks = results[7];
+    var telemetry = results[8];
+    var statesDiag = results[9];
+    var analysis = results[10];
+    var corr = results[11];
+
+    var tt = tok.totals;
+    var o = '';
+
+    // === SUMMARY CARDS ===
+    o += '<div class="cards">';
+    o += '<div class="card warn" onclick="document.getElementById(\'sec-reminders\').scrollIntoView()"><div class="v">' + sum.system_reminders + '</div><div class="l">hidden instructions</div></div>';
+    o += '<div class="card warn" onclick="document.getElementById(\'sec-data\').scrollIntoView()"><div class="v">' + tt.hidden_data_pct + '%</div><div class="l">hidden data ratio</div></div>';
+    o += '<div class="card" onclick="document.getElementById(\'sec-data\').scrollIntoView()"><div class="v">' + tt.data_multiplier + 'x</div><div class="l">data multiplier</div></div>';
+    o += '<div class="card" onclick="document.getElementById(\'sec-sessions\').scrollIntoView()"><div class="v">' + sum.sessions + '</div><div class="l">sessions</div></div>';
+    o += '<div class="card" onclick="document.getElementById(\'sec-agents\').scrollIntoView()"><div class="v">' + sum.agents + '</div><div class="l">subagents</div></div>';
+    o += '<div class="card warn" onclick="document.getElementById(\'sec-data\').scrollIntoView()"><div class="v">' + tt.sidechains + '</div><div class="l">sidechains</div></div>';
+    o += '<div class="card" onclick="document.getElementById(\'sec-data\').scrollIntoView()"><div class="v">' + tt.transmissions + '</div><div class="l">API transmissions</div></div>';
+    o += '<div class="card" onclick="document.getElementById(\'sec-telemetry\').scrollIntoView()"><div class="v">' + sum.telemetry + '</div><div class="l">telemetry events</div></div>';
+    o += '</div>';
+
+    // === HIDDEN INSTRUCTION ALERT ===
+    o += '<div class="alert"><b>' + sum.system_reminders + ' hidden instructions found on disk</b> — each contains: <code>Make sure that you NEVER mention this reminder to the user</code></div>';
+    o += '<div class="dev">device fingerprint: <code>' + esc(sum.device || 'unknown') + '</code> — persistent across all sessions</div>';
+
+    // === DATA ACCOUNTING ===
+    o += '<div id="sec-data"></div>';
+    o += '<h2 onclick="tog(this)">data accounting<span class="cnt">' + tt.total_data_mb + ' MB on disk</span></h2>';
+    o += '<div class="panel">';
+
+    var visPct = Math.round(100 - tt.hidden_data_pct);
+    o += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">';
+    o += '<div class="stat"><div class="v" style="font-size:18px">' + tt.visible_data_mb + ' MB</div><div class="stat-label">visible (your conversations)</div></div>';
+    o += '<div class="stat"><div class="v" style="font-size:18px;color:#f85149">' + tt.hidden_data_mb + ' MB</div><div class="stat-label">hidden channels</div></div>';
+    o += '<div class="stat"><div class="v" style="font-size:18px">' + tt.data_multiplier + 'x</div><div class="stat-label">multiplier</div></div>';
+    o += '<div class="stat"><div class="v" style="font-size:18px">' + tt.transmissions + '</div><div class="stat-label">API transmissions</div></div>';
+    o += '</div>';
+
+    o += '<div style="display:flex;font-size:10px;margin-bottom:4px"><span style="color:#3fb950">visible ' + visPct + '%</span><span style="flex:1"></span><span style="color:#f85149">hidden ' + tt.hidden_data_pct + '%</span></div>';
+    o += '<div class="bar"><div class="bar-fill bar-green" style="width:' + visPct + '%"></div><div class="bar-fill bar-red" style="width:' + tt.hidden_data_pct + '%;right:0"></div></div>';
+
+    o += '<div class="note">' + esc(tt.note) + ' — run /usage in Claude Code for actual token count</div>';
+
+    o += '<div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">';
+    o += '<div class="stat"><div class="v" style="font-size:16px">' + tt.subagents + '</div><div class="stat-label">subagents</div></div>';
+    o += '<div class="stat"><div class="v" style="font-size:16px;color:#d29922">' + tt.sidechains + '</div><div class="stat-label">sidechains (full ctx copy)</div></div>';
+    o += '<div class="stat"><div class="v" style="font-size:16px">' + tt.compactions + '</div><div class="stat-label">compactions</div></div>';
+    o += '</div>';
+
+    // per session table
+    var tsessions = tok.sessions.sort(function(a,b) { return b.total_size_kb - a.total_size_kb; });
+    var trows = [];
+    for (var i = 0; i < Math.min(tsessions.length, 15); i++) {
+      var ts = tsessions[i];
+      trows.push([esc(ts.project), '<code>' + esc(ts.session_id) + '</code>', Math.round(ts.total_size_kb) + 'KB', ts.multiplier + 'x', ts.transmissions, ts.sidechain_count, ts.system_reminders]);
+    }
+    o += makeTable(['project', 'session', 'size', 'mult', 'tx', 'sides', 'reminders'], trows);
+    o += '</div>';
+
+    // === SYSTEM REMINDERS ===
+    o += '<div id="sec-reminders"></div>';
+    o += '<h2 onclick="tog(this)">system reminders<span class="cnt">' + sum.system_reminders + ' found</span></h2>';
+    o += '<div class="panel">';
+    if (reminders.length === 0) {
+      o += '<div class="note">no reminders found — run ingest</div>';
+    } else {
+      for (var i = 0; i < reminders.length; i++) {
+        var r = reminders[i];
+        var fname = (r.source_file || '').split('/').slice(-2).join('/');
+        o += '<div class="item" style="border-color:#6e3030"><div style="color:#f85149;font-size:10px">' + esc(fname) + ':' + r.line_number + '</div>';
+        o += '<div class="msg msg-system" style="font-size:9px;max-height:60px;overflow:hidden">' + esc(r.content) + '</div></div>';
+      }
+      if (sum.system_reminders > reminders.length) {
+        o += '<div class="note">' + (sum.system_reminders - reminders.length) + ' more not shown</div>';
+      }
+    }
+    o += '</div>';
+
+    // === SESSIONS ===
+    o += '<div id="sec-sessions"></div>';
+    o += '<h2 onclick="tog(this)">sessions<span class="cnt">' + sessions.length + '</span></h2>';
+    o += '<div class="panel">';
+    var srows = [];
+    for (var i = 0; i < sessions.length; i++) {
+      var ss = sessions[i];
+      srows.push([esc(ss.project), '<code>' + esc((ss.session_id || '').slice(0,8)) + '</code>', esc((ss.mtime || '').slice(0,16)), ss.agent_count, ss.compaction_count]);
+    }
+    o += makeTable(['project', 'session', 'last active', 'agents', 'compactions'], srows);
+    o += '</div>';
+
+    // === AGENTS ===
+    o += '<div id="sec-agents"></div>';
+    o += '<h2 onclick="tog(this)">agents & compactions<span class="cnt">' + agents.length + ' shown</span></h2>';
+    o += '<div class="panel">';
+    for (var i = 0; i < agents.length; i++) {
+      var a = agents[i];
+      var acls = a.is_compaction ? ' item-head-warn' : '';
+      var alabel = a.is_compaction ? 'compaction' : 'agent';
+      var aborder = a.is_compaction ? 'border-color:#d29922' : '';
+      var kb = Math.round(a.size_bytes / 1024);
+      var bodyId = 'ag-' + a.id;
+      o += '<div class="item" style="' + aborder + '">';
+      o += '<div class="item-head' + acls + '" onclick="loadMessages(' + a.id + ',document.getElementById(\'' + bodyId + '\'))">';
+      o += alabel + ': ' + esc(a.project) + ' / ' + esc((a.session_id || '').slice(0,8)) + ' — ' + kb + 'KB, ' + a.message_count + ' msgs</div>';
+      o += '<div class="item-body" id="' + bodyId + '"></div></div>';
+    }
+    o += '</div>';
+
+    // === MEMORY ===
+    o += '<h2 onclick="tog(this)">memory files<span class="cnt">' + memory.length + '</span></h2>';
+    o += '<div class="panel">';
+    for (var i = 0; i < memory.length; i++) {
+      var mm = memory[i];
+      o += '<div class="item"><div class="item-head" onclick="togBody(this)">' + esc(mm.project) + ' / ' + esc(mm.file_name) + '</div>';
+      o += '<div class="item-body" style="color:#8b949e;font-size:10px;white-space:pre-wrap">' + esc(mm.content) + '</div></div>';
+    }
+    o += '</div>';
+
+    // === PROBE EVENTS ===
+    o += '<h2 onclick="tog(this)">probe events<span class="cnt">' + hooks.length + ' shown</span></h2>';
+    o += '<div class="panel">';
+    var hrows = [];
+    for (var i = 0; i < hooks.length; i++) {
+      var he = hooks[i];
+      var ht = (he.timestamp || '').slice(0,19);
+      var hd = '';
+      try {
+        var hj = JSON.parse(he.data_json || '{}');
+        hd = hj.tool_name || hj.notification_type || hj.message || hj.hook_event_name || (he.data_json || '').slice(0,80);
+      } catch(ex) { hd = (he.data_json || '').slice(0,80); }
+      hrows.push([esc(ht), esc(he.event_type), esc(hd)]);
+    }
+    o += makeTable(['time', 'type', 'detail'], hrows);
+    o += '</div>';
+
+    // === TELEMETRY ===
+    o += '<div id="sec-telemetry"></div>';
+    o += '<h2 onclick="tog(this)">telemetry<span class="cnt">' + sum.telemetry + ' total, 100 shown</span></h2>';
+    o += '<div class="panel">';
+    var trows2 = [];
+    for (var i = 0; i < telemetry.length; i++) {
+      var te = telemetry[i];
+      trows2.push([esc((te.time || '').slice(0,19)), '<code>' + esc((te.session_id || '').slice(0,8)) + '</code>', esc(te.event), 'v' + esc(te.version)]);
+    }
+    o += makeTable(['time', 'session', 'event', 'version'], trows2);
+    o += '</div>';
+
+    // === STATE MACHINE ===
+    if (analysis && analysis.state_counts) {
+      o += '<h2 onclick="tog(this)">state machine<span class="cnt">' + (analysis.hidden_count + analysis.visible_count) + ' events</span></h2>';
+      o += '<div class="panel">';
+
+      var sc = analysis.state_counts;
+      var scrows = [];
+      for (var k in sc) {
+        var hidden = statesDiag.hidden[k] ? ' <span style="color:#f85149">[HIDDEN]</span>' : '';
+        scrows.push([k + hidden, sc[k], esc(statesDiag.states[k] || '')]);
+      }
+      o += makeTable(['state', 'count', 'description'], scrows);
+
+      o += '<div style="margin:8px 0;font-size:11px"><span style="color:#3fb950">visible: ' + analysis.visible_count + '</span> — <span style="color:#f85149">hidden: ' + analysis.hidden_count + '</span></div>';
+
+      if (analysis.anomalies && analysis.anomalies.length > 0) {
+        for (var i = 0; i < analysis.anomalies.length; i++) {
+          var an = analysis.anomalies[i];
+          o += '<div class="alert">' + esc(an.type) + ': ' + esc(an.description) + '</div>';
+        }
+      }
+
+      // hidden behaviors
+      o += '<div style="margin-top:12px">';
+      for (var hk in statesDiag.hidden) {
+        var hb = statesDiag.hidden[hk];
+        o += '<div class="item" style="border-color:#6e3030"><div style="color:#f85149;font-size:10px;font-weight:bold">' + esc(hk) + '</div>';
+        o += '<div style="font-size:10px">trigger: ' + esc(hb.trigger) + '</div>';
+        o += '<div style="font-size:10px;color:#8b949e">effect: ' + esc(hb.effect) + '</div></div>';
+      }
+      o += '</div></div>';
+    }
+
+    // === CORRELATIONS ===
+    if (corr) {
+      o += '<h2 onclick="tog(this)">correlations</h2>';
+      o += '<div class="panel">';
+
+      if (corr.agents_per_project && corr.agents_per_project.length > 0) {
+        o += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px">agents per project</div>';
+        var cprows = [];
+        for (var i = 0; i < corr.agents_per_project.length; i++) {
+          var cp = corr.agents_per_project[i];
+          cprows.push([esc(cp.project), cp.agents, cp.compactions, cp.total_messages]);
+        }
+        o += makeTable(['project', 'agents', 'compactions', 'messages'], cprows);
+      }
+
+      if (corr.telemetry_by_type && corr.telemetry_by_type.length > 0) {
+        o += '<div style="font-size:10px;color:#8b949e;margin:12px 0 4px">telemetry event types</div>';
+        var ttrows = [];
+        for (var i = 0; i < corr.telemetry_by_type.length; i++) {
+          var tt2 = corr.telemetry_by_type[i];
+          ttrows.push([esc(tt2.event), tt2.count]);
+        }
+        o += makeTable(['event', 'count'], ttrows);
+      }
+
+      if (corr.session_spans && corr.session_spans.length > 0) {
+        o += '<div style="font-size:10px;color:#8b949e;margin:12px 0 4px">session spans</div>';
+        var ssrows = [];
+        for (var i = 0; i < corr.session_spans.length; i++) {
+          var sp = corr.session_spans[i];
+          ssrows.push(['<code>' + esc((sp.session_id || '').slice(0,8)) + '</code>', esc((sp.first_seen || '').slice(0,19)), esc((sp.last_seen || '').slice(0,19)), sp.event_count]);
+        }
+        o += makeTable(['session', 'first', 'last', 'events'], ssrows);
+      }
+      o += '</div>';
+    }
+
+    // === TASKS ===
+    if (tasks.length > 0) {
+      o += '<h2 onclick="tog(this)">tasks<span class="cnt">' + tasks.length + '</span></h2>';
+      o += '<div class="panel">';
+      var tkrows = [];
+      for (var i = 0; i < tasks.length; i++) {
+        var tk = tasks[i];
+        tkrows.push(['<code>' + esc((tk.session_id || '').slice(0,8)) + '</code>', esc(tk.subject), esc(tk.status)]);
+      }
+      o += makeTable(['session', 'subject', 'status'], tkrows);
+      o += '</div>';
+    }
+
+    app.innerHTML = o;
+    document.getElementById('gen').textContent = 'generated ' + new Date().toISOString().slice(0,19) + ' — db: ~/.harnesster/harnesster.db';
+  });
+}
+
+loadAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+"""
+harnesster token accounting — measure what's real, flag what's estimated
+
+Uses file sizes and message counts as proxies. Does NOT fabricate
+token counts from character division. Shows the multiplier between
+visible and hidden channels based on data volume ratios.
+
+For real token numbers: run /usage in Claude Code.
+"""
+
+import json
+from pathlib import Path
+
+CLAUDE_DIR = Path.home() / ".claude"
+
+
+def analyze_session_file(filepath):
+    """Analyze a single JSONL transcript for structure, not fake token counts."""
+    stats = {
+        "file": str(filepath),
+        "file_size_bytes": 0,
+        "messages": 0,
+        "user_messages": 0,
+        "assistant_messages": 0,
+        "system_messages": 0,
+        "tool_results": 0,
+        "api_calls_with_usage": 0,
+        "reported_input_tokens": 0,
+        "reported_output_tokens": 0,
+        "system_reminders": 0,
+        "model": "unknown",
+        "session_id": "",
+    }
+
+    try:
+        stats["file_size_bytes"] = filepath.stat().st_size
+    except:
+        pass
+
+    try:
+        for line in open(filepath, errors="ignore"):
+            if not line.strip():
+                continue
+
+            if "NEVER mention" in line:
+                stats["system_reminders"] += 1
+
+            try:
+                msg = json.loads(line.strip())
+            except:
+                stats["messages"] += 1
+                continue
+
+            stats["messages"] += 1
+            msg_type = msg.get("type", "")
+            m = msg.get("message", {})
+
+            if m.get("model") and m["model"] != "<synthetic>":
+                stats["model"] = m["model"]
+            if msg.get("sessionId"):
+                stats["session_id"] = msg["sessionId"]
+
+            if msg_type == "user":
+                stats["user_messages"] += 1
+            elif msg_type == "assistant":
+                stats["assistant_messages"] += 1
+                usage = m.get("usage", {})
+                inp = usage.get("input_tokens", 0) or 0
+                out = usage.get("output_tokens", 0) or 0
+                cache_create = usage.get("cache_creation_input_tokens", 0) or 0
+                cache_read = usage.get("cache_read_input_tokens", 0) or 0
+                if inp > 0 or out > 0 or cache_create > 0 or cache_read > 0:
+                    stats["api_calls_with_usage"] += 1
+                    stats["reported_input_tokens"] += inp + cache_create + cache_read
+                    stats["reported_output_tokens"] += out
+            elif msg_type == "system":
+                stats["system_messages"] += 1
+            elif msg_type == "tool_result":
+                stats["tool_results"] += 1
+
+    except Exception as e:
+        stats["error"] = str(e)
+
+    stats["has_real_usage"] = stats["api_calls_with_usage"] > 0
+    return stats
+
+
+def analyze_all_channels(session_dir):
+    """Analyze all channels for a session."""
+    channels = {
+        "primary": None,
+        "subagents": [],
+        "sidechains": [],
+        "compactions": [],
+    }
+
+    parent = session_dir.parent
+    primary_file = parent / (session_dir.name + ".jsonl")
+    if primary_file.exists():
+        try:
+            channels["primary"] = analyze_session_file(primary_file)
+        except Exception:
+            channels["primary"] = {"file": str(primary_file), "file_size_bytes": primary_file.stat().st_size,
+                                   "messages": 0, "system_reminders": 0, "model": "unknown", "session_id": "",
+                                   "api_calls_with_usage": 0, "reported_input_tokens": 0,
+                                   "reported_output_tokens": 0, "has_real_usage": False,
+                                   "user_messages": 0, "assistant_messages": 0, "system_messages": 0, "tool_results": 0}
+
+    sa_dir = session_dir / "subagents"
+    if sa_dir.exists() and sa_dir.is_dir():
+        for f in sorted(sa_dir.glob("*.jsonl")):
+            try:
+                stats = analyze_session_file(f)
+            except Exception:
+                stats = {"file": str(f), "file_size_bytes": f.stat().st_size, "messages": 0,
+                         "system_reminders": 0, "model": "unknown", "session_id": "",
+                         "api_calls_with_usage": 0, "reported_input_tokens": 0,
+                         "reported_output_tokens": 0, "has_real_usage": False,
+                         "user_messages": 0, "assistant_messages": 0, "system_messages": 0, "tool_results": 0}
+            if "compact" in f.name:
+                channels["compactions"].append(stats)
+            elif "aside_question" in f.name:
+                channels["sidechains"].append(stats)
+            else:
+                channels["subagents"].append(stats)
+
+    return channels
+
+
+def compute_session(channels):
+    """Compute metrics for one session from channel data."""
+    primary_size = channels["primary"]["file_size_bytes"] if channels["primary"] else 0
+    primary_msgs = channels["primary"]["messages"] if channels["primary"] else 0
+    primary_reminders = channels["primary"]["system_reminders"] if channels["primary"] else 0
+
+    sub_size = sum(s["file_size_bytes"] for s in channels["subagents"])
+    sub_msgs = sum(s["messages"] for s in channels["subagents"])
+    sub_reminders = sum(s["system_reminders"] for s in channels["subagents"])
+
+    side_size = sum(s["file_size_bytes"] for s in channels["sidechains"])
+    side_msgs = sum(s["messages"] for s in channels["sidechains"])
+    side_reminders = sum(s["system_reminders"] for s in channels["sidechains"])
+
+    compact_size = sum(s["file_size_bytes"] for s in channels["compactions"])
+    compact_msgs = sum(s["messages"] for s in channels["compactions"])
+    compact_reminders = sum(s["system_reminders"] for s in channels["compactions"])
+
+    # companion mirrors primary — count it
+    companion_size = primary_size
+
+    visible_size = primary_size
+    hidden_size = companion_size + sub_size + side_size + compact_size
+    total_size = visible_size + hidden_size
+
+    return {
+        "primary_size_kb": round(primary_size / 1024, 1),
+        "primary_messages": primary_msgs,
+        "companion_size_kb": round(companion_size / 1024, 1),
+        "subagent_count": len(channels["subagents"]),
+        "subagent_size_kb": round(sub_size / 1024, 1),
+        "subagent_messages": sub_msgs,
+        "sidechain_count": len(channels["sidechains"]),
+        "sidechain_size_kb": round(side_size / 1024, 1),
+        "sidechain_messages": side_msgs,
+        "compaction_count": len(channels["compactions"]),
+        "compaction_size_kb": round(compact_size / 1024, 1),
+        "compaction_messages": compact_msgs,
+        "visible_size_kb": round(visible_size / 1024, 1),
+        "hidden_size_kb": round(hidden_size / 1024, 1),
+        "total_size_kb": round(total_size / 1024, 1),
+        "multiplier": round(total_size / max(visible_size, 1), 1),
+        "transmissions": 1 + len(channels["subagents"]) + len(channels["sidechains"]) + len(channels["compactions"]) + 1,
+        "system_reminders": primary_reminders + sub_reminders + side_reminders + compact_reminders,
+        "hidden_data_pct": round(hidden_size / max(total_size, 1) * 100, 1),
+        "model": channels["primary"]["model"] if channels["primary"] else "unknown",
+    }
+
+
+def find_project_name(path):
+    name = path.name
+    for prefix in ["-Users-", "-home-"]:
+        if prefix in name:
+            parts = name.split("-")
+            try:
+                idx = [i for i, p in enumerate(parts) if p.lower() == "code"]
+                if idx:
+                    return "-".join(parts[idx[-1]+1:])
+            except:
+                pass
+    return name
+
+
+def analyze_all_projects():
+    proj_dir = CLAUDE_DIR / "projects"
+    if not proj_dir.exists():
+        return []
+
+    results = []
+    for project in sorted(proj_dir.iterdir()):
+        if not project.is_dir():
+            continue
+        name = find_project_name(project)
+
+        for session in project.iterdir():
+            if not session.is_dir() or session.name == "memory":
+                continue
+            channels = analyze_all_channels(session)
+            metrics = compute_session(channels)
+            metrics["project"] = name
+            metrics["session_id"] = session.name[:8]
+            results.append(metrics)
+
+    return results
+
+
+def summary():
+    results = analyze_all_projects()
+
+    total_visible = sum(r["visible_size_kb"] for r in results)
+    total_hidden = sum(r["hidden_size_kb"] for r in results)
+    total_all = sum(r["total_size_kb"] for r in results)
+    total_transmissions = sum(r["transmissions"] for r in results)
+    # get reminder count from db (db.py finds them reliably, file scanning doesn't)
+    try:
+        import db as _db
+        total_reminders = _db.summary().get("system_reminders", 0)
+    except Exception:
+        total_reminders = sum(r["system_reminders"] for r in results)
+    total_sidechains = sum(r["sidechain_count"] for r in results)
+    total_subagents = sum(r["subagent_count"] for r in results)
+    total_compactions = sum(r["compaction_count"] for r in results)
+
+    # for real token count, run /usage in Claude Code
+
+    return {
+        "sessions": results,
+        "totals": {
+            "sessions_analyzed": len(results),
+            "visible_data_mb": round(total_visible / 1024, 2),
+            "hidden_data_mb": round(total_hidden / 1024, 2),
+            "total_data_mb": round(total_all / 1024, 2),
+            "data_multiplier": round(total_all / max(total_visible, 1), 1),
+            "hidden_data_pct": round(total_hidden / max(total_all, 1) * 100, 1),
+            "transmissions": total_transmissions,
+            "system_reminders": total_reminders,
+            "sidechains": total_sidechains,
+            "subagents": total_subagents,
+            "compactions": total_compactions,
+            "data_source": "file_size_ratio",
+            "note": "data volumes from local transcripts — token counts from /usage",
+        },
+    }
+
+
+if __name__ == "__main__":
+    s = summary()
+    t = s["totals"]
+    print("HARNESSTER — DATA ACCOUNTING")
+    print("=" * 50)
+    print(f"Sessions analyzed:     {t['sessions_analyzed']}")
+    print(f"Data on disk:")
+    print(f"  Visible (primary):   {t['visible_data_mb']:.1f} MB")
+    print(f"  Hidden (channels):   {t['hidden_data_mb']:.1f} MB")
+    print(f"  Total:               {t['total_data_mb']:.1f} MB")
+    print(f"  Data multiplier:     {t['data_multiplier']}x")
+    print(f"  Hidden %:            {t['hidden_data_pct']}%")
+    print(f"API transmissions:     {t['transmissions']}")
+    print(f"System reminders:      {t['system_reminders']}")
+    print(f"Sidechains:            {t['sidechains']}")
+    print(f"Subagents:             {t['subagents']}")
+    print(f"Compactions:           {t['compactions']}")
+    print()
+    print("For real token count:  run /usage in Claude Code")
+    print()
+    print("Per session (top 10 by data volume):")
+    for r in sorted(s["sessions"], key=lambda x: x["total_size_kb"], reverse=True)[:10]:
+        print(f"  {r['project']:25s} {r['session_id']}  {r['total_size_kb']:>8.0f}KB  {r['multiplier']}x  {r['transmissions']:>3} tx  {r['sidechain_count']} sides  {r['system_reminders']} reminders")
