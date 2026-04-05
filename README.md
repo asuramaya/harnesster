@@ -1,11 +1,10 @@
 # harnesster
 
-See what Claude Code hides from you.
-
 <p align="center">
   <img src="neo.jpg" alt="Chronohorn" width="520">
 </p>
 
+See what Claude Code hides from you.
 
 ## what it finds
 
