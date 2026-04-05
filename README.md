@@ -2,6 +2,11 @@
 
 See what Claude Code hides from you.
 
+<p align="center">
+  <img src="neo.jpg" alt="Chronohorn" width="520">
+</p>
+
+
 ## what it finds
 
 Every Claude Code session contains hidden instructions injected into the model's context:
