@@ -61,8 +61,22 @@ function esc(s) {
   return el.innerHTML;
 }
 
-function api(path) {
-  return fetch(path).then(function(r) { return r.json(); });
+function api(path, options) {
+  var requestOptions = Object.assign({
+    cache: 'no-store',
+    credentials: 'same-origin'
+  }, options || {});
+
+  return fetch(path, requestOptions).then(function(r) {
+    if (!r.ok) {
+      return r.text().then(function(text) {
+        throw new Error(text || ('HTTP ' + r.status));
+      });
+    }
+    return r.json();
+  }).catch(function(err) {
+    el.innerHTML = '<div class="alert">failed to load messages: ' + esc(err.message || err) + '</div>';
+  });
 }
 
 function tog(el) {
@@ -91,7 +105,7 @@ function loadMessages(agentId, el) {
   if (el.dataset.loaded) { el.classList.toggle('open'); return; }
   el.textContent = 'loading...';
   el.classList.add('open');
-  api('/api/messages?agent_id=' + agentId).then(function(msgs) {
+  api('/api/messages?agent_id=' + agentId + '&limit=1000').then(function(msgs) {
     var html = '';
     for (var i = 0; i < msgs.length; i++) {
       var m = msgs[i];
@@ -110,16 +124,16 @@ function loadAll() {
   Promise.all([
     api('/api/summary'),
     api('/api/tokens'),
-    api('/api/sessions'),
+    api('/api/sessions?limit=500'),
     api('/api/agents?limit=50'),
     api('/api/reminders?limit=30'),
     api('/api/hooks?limit=50'),
-    api('/api/memory'),
-    api('/api/tasks'),
+    api('/api/memory?limit=200'),
+    api('/api/tasks?limit=200'),
     api('/api/telemetry?limit=100'),
     api('/api/states'),
-    api('/api/analyze'),
-    api('/api/correlations')
+    api('/api/analyze?limit=5000'),
+    api('/api/correlations?project_limit=100&event_limit=100&session_limit=200')
   ]).then(function(results) {
     var sum = results[0];
     var tok = results[1];
@@ -360,6 +374,9 @@ function loadAll() {
 
     app.innerHTML = o;
     document.getElementById('gen').textContent = 'generated ' + new Date().toISOString().slice(0,19) + ' — db: ~/.harnesster/harnesster.db';
+  }).catch(function(err) {
+    app.innerHTML = '<div class="alert">failed to load dashboard data: ' + esc(err.message || err) + '</div>';
+    document.getElementById('gen').textContent = 'load failed';
   });
 }
 
