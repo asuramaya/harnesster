@@ -133,6 +133,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if not term:
                 self.json_response([])
                 return
+            if len(term) > 200:
+                self.respond(400, b"search term too long", "text/plain")
+                return
             like = "%" + term + "%"
             results = []
             for row in db.query("SELECT time, event, session_id FROM telemetry WHERE event LIKE ? OR session_id LIKE ? LIMIT 50", (like, like)):
@@ -220,7 +223,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(code)
             self.send_header("Content-Type", content_type + "; charset=utf-8")
             self.send_header("Content-Length", str(len(content)))
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", "null")
             self.end_headers()
             self.wfile.write(content)
         except BrokenPipeError:
