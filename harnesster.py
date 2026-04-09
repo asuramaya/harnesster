@@ -7,6 +7,7 @@ harnesster — see what Claude Code hides from you
   python3 harnesster.py --ingest     # ingest data only
   python3 harnesster.py --dashboard  # dashboard only
   python3 harnesster.py --port 8888  # custom port
+  python3 harnesster.py --dashboard --no-open  # don't auto-launch browser
 """
 
 import json
@@ -40,6 +41,8 @@ MAX_OFFSET = 100000
 MAX_ANALYZE_EVENTS = 5000
 MAX_SEARCH_TERM_LENGTH = 200
 SEARCH_RESULTS_PER_TABLE = 50
+DEFAULT_CORRELATION_TIMELINE_LIMIT = 720
+NO_OPEN_FLAG = "--no-open"
 
 
 class BadRequest(Exception):
@@ -100,8 +103,14 @@ def setup() -> None:
         print("ERROR: settings.json not found")
         sys.exit(1)
 
-    with open(SETTINGS_PATH, encoding="utf-8") as f:
-        settings = json.load(f)
+    try:
+        with open(SETTINGS_PATH, encoding="utf-8") as f:
+            settings = json.load(f)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"settings.json is not valid JSON: {exc}") from exc
+
+    if not isinstance(settings, dict):
+        raise SystemExit("settings.json must contain a JSON object")
 
     def make_hook(arg: str):
         return {
@@ -162,8 +171,12 @@ def setup() -> None:
         settings["hooks"] = hooks
         backup_path = SETTINGS_PATH.with_suffix(SETTINGS_PATH.suffix + ".bak")
         shutil.copy2(SETTINGS_PATH, backup_path)
-        with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
+        temp_path = SETTINGS_PATH.with_suffix(SETTINGS_PATH.suffix + ".tmp")
+        with open(temp_path, "w", encoding="utf-8") as f:
             json.dump(settings, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temp_path, SETTINGS_PATH)
         print(f"hooks installed: {installed_probe}")
     else:
         print("hooks up to date.")
@@ -175,6 +188,43 @@ def setup() -> None:
         check=False,
     )
     print("restart Claude Code for hooks to take effect.\n")
+
+
+def get_setup_status() -> dict:
+    status = {
+        "has_settings": SETTINGS_PATH.exists(),
+        "settings_parse_error": None,
+        "installed_probe_exists": INSTALLED_PROBE_PATH.is_file(),
+        "hooks_configured": False,
+        "hook_command_count": 0,
+    }
+
+    if not status["has_settings"]:
+        return status
+
+    try:
+        with open(SETTINGS_PATH, encoding="utf-8") as f:
+            settings = json.load(f)
+    except Exception as exc:
+        status["settings_parse_error"] = str(exc)
+        return status
+
+    hooks = settings.get("hooks", {})
+    hook_count = 0
+    for config in hooks.values():
+        entries = config if isinstance(config, list) else [config]
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            for hook in entry.get("hooks", []):
+                if not isinstance(hook, dict):
+                    continue
+                if hook.get("type") == "command" and "harness_probe.py" in hook.get("command", ""):
+                    hook_count += 1
+
+    status["hook_command_count"] = hook_count
+    status["hooks_configured"] = hook_count > 0
+    return status
 
 
 def escape_like(term: str) -> str:
@@ -195,14 +245,23 @@ class Handler(http.server.BaseHTTPRequestHandler):
         params = parse_qs(parsed.query)
 
         try:
+            self.enforce_allowed_host()
             if path in ("/", "/dashboard"):
                 with open(TEMPLATE_PATH, encoding="utf-8") as f:
                     content = f.read().encode("utf-8")
                 self.respond(HTTPStatus.OK, content, "text/html")
                 return
 
+            if path == "/favicon.ico":
+                self.respond(HTTPStatus.NO_CONTENT, b"", "image/x-icon")
+                return
+
             if path == "/api/summary":
                 self.json_response(db.summary())
+                return
+
+            if path == "/api/status":
+                self.json_response(get_setup_status())
                 return
 
             if path == "/api/telemetry":
@@ -312,10 +371,25 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 project_limit = self.get_int_param(params, "project_limit", 100, minimum=1, maximum=MAX_LIMIT)
                 event_limit = self.get_int_param(params, "event_limit", 100, minimum=1, maximum=MAX_LIMIT)
                 session_limit = self.get_int_param(params, "session_limit", 200, minimum=1, maximum=MAX_LIMIT)
+                timeline_limit = self.get_int_param(
+                    params,
+                    "timeline_limit",
+                    DEFAULT_CORRELATION_TIMELINE_LIMIT,
+                    minimum=1,
+                    maximum=5000,
+                )
 
                 hook_timeline = db.query(
+                    "SELECT minute, count, event_type FROM ("
                     "SELECT substr(timestamp, 1, 16) as minute, COUNT(*) as count, event_type "
-                    "FROM hook_events GROUP BY minute, event_type ORDER BY minute"
+                    "FROM hook_events GROUP BY minute, event_type ORDER BY minute DESC LIMIT ?"
+                    ") ORDER BY minute",
+                    (timeline_limit,),
+                )
+                hook_totals = db.query(
+                    "SELECT event_type, COUNT(*) as count "
+                    "FROM hook_events GROUP BY event_type ORDER BY count DESC LIMIT ?",
+                    (event_limit,),
                 )
                 agents_per_project = db.query(
                     "SELECT project, COUNT(*) as total, "
@@ -336,6 +410,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 )
                 self.json_response({
                     "hook_timeline": hook_timeline,
+                    "hook_totals": hook_totals,
                     "agents_per_project": agents_per_project,
                     "telemetry_by_type": tel_by_type,
                     "session_spans": session_spans,
@@ -345,8 +420,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if path == "/api/reminders":
                 limit = self.get_int_param(params, "limit", 50, minimum=1, maximum=MAX_LIMIT)
                 rows = db.query(
-                    "SELECT source_file, line_number, substr(content, 1, 500) as content, timestamp "
-                    "FROM system_reminders ORDER BY source_file, line_number LIMIT ?",
+                    "SELECT source_file, line_number, content, timestamp "
+                    "FROM system_reminders "
+                    "ORDER BY COALESCE(timestamp, '') DESC, source_file DESC, line_number DESC LIMIT ?",
                     (limit,),
                 )
                 self.json_response(rows)
@@ -381,6 +457,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.respond(HTTPStatus.NOT_FOUND, b"not found", "text/plain")
         except BadRequest as exc:
             self.json_error(HTTPStatus.BAD_REQUEST, str(exc))
+        except PermissionError as exc:
+            self.json_error(HTTPStatus.FORBIDDEN, str(exc))
         except Exception:
             traceback.print_exc()
             self.json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
@@ -390,6 +468,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         path = parsed.path
 
         try:
+            self.enforce_allowed_host()
             if path != "/api/ingest":
                 self.respond(HTTPStatus.NOT_FOUND, b"not found", "text/plain")
                 return
@@ -407,7 +486,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
     def do_OPTIONS(self):
-        self.respond(HTTPStatus.METHOD_NOT_ALLOWED, b"method not allowed", "text/plain")
+        try:
+            self.enforce_allowed_host()
+            self.respond(HTTPStatus.METHOD_NOT_ALLOWED, b"method not allowed", "text/plain")
+        except PermissionError as exc:
+            self.json_error(HTTPStatus.FORBIDDEN, str(exc))
+
+    def enforce_allowed_host(self) -> None:
+        allowed_hosts = getattr(self.server, "allowed_hosts", set())
+        host = (self.headers.get("Host") or "").strip().lower()
+        if host in allowed_hosts:
+            return
+        raise PermissionError("unexpected Host header")
 
     def get_int_param(self, params, name, default, minimum=0, maximum=None, required=False):
         raw = params.get(name, [None])[0]
@@ -467,6 +557,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header("X-Frame-Options", "DENY")
             self.send_header("Referrer-Policy", "no-referrer")
             self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+            self.send_header("Cross-Origin-Opener-Policy", "same-origin")
+            self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
             if content_type == "text/html":
                 self.send_header(
                     "Content-Security-Policy",
@@ -487,14 +579,31 @@ class ThreadedHTTPServer(ThreadingMixIn, http.server.HTTPServer):
     allow_reuse_address = True
 
 
-def serve(port: int = DEFAULT_PORT) -> None:
+def open_browser(url: str) -> None:
+    try:
+        webbrowser.open(url)
+    except Exception:
+        pass
+
+
+def should_open_browser(args) -> bool:
+    return NO_OPEN_FLAG not in args
+
+
+def serve(port: int = DEFAULT_PORT, launch_browser: bool = True) -> None:
     server = ThreadedHTTPServer(("127.0.0.1", port), Handler)
     server.allowed_origins = {
         f"http://127.0.0.1:{port}",
         f"http://localhost:{port}",
     }
-    print("harnesster: http://127.0.0.1:" + str(port))
-    webbrowser.open("http://127.0.0.1:" + str(port))
+    server.allowed_hosts = {
+        f"127.0.0.1:{port}",
+        f"localhost:{port}",
+    }
+    url = "http://127.0.0.1:" + str(port)
+    print("harnesster: " + url)
+    if launch_browser:
+        open_browser(url)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -521,6 +630,7 @@ def get_port(args):
 if __name__ == "__main__":
     args = sys.argv[1:]
     port = get_port(args)
+    launch_browser = should_open_browser(args)
 
     if "--setup" in args:
         setup()
@@ -529,12 +639,12 @@ if __name__ == "__main__":
         print("ingested:", result)
         print("db:", db.summary())
     elif "--dashboard" in args:
-        serve(port)
+        serve(port, launch_browser=launch_browser)
     elif not args or "--port" in args:
         setup()
         db.ingest_all()
         print("data:", db.summary())
         print()
-        serve(port)
+        serve(port, launch_browser=launch_browser)
     else:
         print(__doc__)

@@ -8,18 +8,23 @@
 body{background:#0d1117;color:#c9d1d9;font-family:'SF Mono','Fira Code',monospace;font-size:13px;padding:20px 40px;max-width:1400px;margin:0 auto}
 h1{color:#f0f6fc;font-size:28px}
 .sub{color:#8b949e;font-size:11px;margin:4px 0 20px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px}
 .card{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:12px;cursor:pointer;transition:border-color 0.2s}
 .card:hover{border-color:#58a6ff}
 .v{font-size:24px;color:#f0f6fc;font-weight:bold}
 .l{color:#8b949e;font-size:10px;margin-top:2px}
 .warn{border-color:#d29922}.warn .v{color:#d29922}
+.measure{border-color:#f85149}.measure .v{color:#f85149}
+.danger{border-color:#f85149}.danger .v{color:#f85149}
 .alert{background:#2d1b1b;border:1px solid #6e3030;border-radius:4px;padding:10px;margin:12px 0;color:#f85149;font-size:11px}
 .dev{color:#d29922;font-size:10px;margin-bottom:16px}
 h2{color:#8b949e;font-size:12px;margin-top:20px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1.5px;cursor:pointer;user-select:none}
 h2:hover{color:#c9d1d9}
 .panel{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:14px;margin-bottom:12px;display:none;max-height:70vh;overflow-y:auto}
 .panel.open{display:block}
+.table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
 th{text-align:left;color:#8b949e;font-size:9px;text-transform:uppercase;letter-spacing:1px;padding:4px 6px;border-bottom:1px solid #30363d;position:sticky;top:0;background:#161b22}
 td{padding:3px 6px;border-bottom:1px solid #21262d;font-size:11px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -44,11 +49,50 @@ code{background:#1c2128;padding:1px 3px;border-radius:2px;font-size:10px}
 .refresh{background:#161b22;border:1px solid #30363d;border-radius:4px;padding:4px 10px;color:#8b949e;font-family:inherit;font-size:10px;cursor:pointer;margin-left:8px}
 .refresh:hover{color:#f0f6fc;border-color:#58a6ff}
 .note{color:#8b949e;font-size:10px;padding:6px;background:#161b22;border:1px solid #30363d;border-radius:4px;margin:8px 0}
+.note-warn{background:#20170f;border-color:#6b4e1d;color:#d29922}
+.note-danger{background:#201317;border-color:#7a2f37;color:#ffb1b8}
+.onboard{background:#11161d;border:1px solid #30363d;border-radius:6px;padding:14px;margin:12px 0}
+.onboard h3{font-size:12px;color:#f0f6fc;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.onboard p{font-size:11px;color:#c9d1d9;margin:6px 0}
+.steps{margin-top:10px}
+.steps div{font-size:11px;color:#c9d1d9;margin:6px 0}
+.pill{display:inline-block;padding:2px 6px;border-radius:999px;border:1px solid #30363d;background:#161b22;color:#8b949e;font-size:9px;text-transform:uppercase;letter-spacing:0.6px;margin-right:6px}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:10px 0 12px}
+.summary-box{background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:10px}
+.summary-value{font-size:20px;color:#f0f6fc;font-weight:bold;line-height:1.1}
+.summary-label{color:#8b949e;font-size:10px;margin-top:4px;line-height:1.35}
+.pattern-block{background:#11161d;border:1px solid #30363d;border-radius:6px;padding:10px;margin:10px 0 12px}
+.pattern-title{font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.pattern-line{font-size:11px;line-height:1.5;margin:4px 0}
+.reminder-summary{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 12px}
+.reminder-chip{background:#161b22;border:1px solid #30363d;border-radius:999px;padding:4px 8px;color:#8b949e;font-size:9px;text-transform:uppercase;letter-spacing:0.7px}
+.reminder-card{background:#11161d;border:1px solid #30363d;border-radius:6px;padding:10px;margin:10px 0}
+.reminder-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.reminder-type{display:inline-block;background:#161b22;border:1px solid #30363d;border-radius:999px;padding:2px 7px;color:#c9d1d9;font-size:9px;text-transform:uppercase;letter-spacing:0.7px}
+.reminder-meta{color:#f0f6fc;font-size:11px;margin-top:6px}
+.reminder-source{color:#8b949e;font-size:10px;margin-top:4px}
+.reminder-time{color:#8b949e;font-size:10px}
+.reminder-body{margin-top:10px;background:#11161d;border:1px solid #30363d;border-radius:4px;padding:8px;max-height:220px;overflow:auto}
+.reminder-line{font-size:10px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.reminder-line + .reminder-line{margin-top:4px}
+.reminder-line.blank{margin-top:6px}
+.reminder-line.secrecy{color:#c9d1d9;font-weight:bold;border-left:2px solid #484f58;padding-left:8px;background:#161b22}
+@media (max-width: 720px){
+  body{padding:16px}
+  .topbar{align-items:flex-start}
+  .refresh{margin-left:0}
+}
 </style>
 </head>
 <body>
 
-<h1>harnesster <button class="refresh" onclick="loadAll()">refresh</button></h1>
+<div class="topbar">
+  <h1>harnesster</h1>
+  <div class="actions">
+    <button class="refresh" onclick="loadAll()">refresh</button>
+    <button class="refresh" id="ingestBtn" onclick="runIngest()">ingest now</button>
+  </div>
+</div>
 <div class="sub" id="gen">loading...</div>
 
 <div id="app"></div>
@@ -74,14 +118,285 @@ function api(path, options) {
       });
     }
     return r.json();
-  }).catch(function(err) {
-    el.innerHTML = '<div class="alert">failed to load messages: ' + esc(err.message || err) + '</div>';
   });
 }
 
-function tog(el) {
+function apiSoft(path, fallback, options) {
+  return api(path, options).catch(function(err) {
+    return {
+      __error: err.message || String(err),
+      __fallback: fallback
+    };
+  });
+}
+
+function valOr(data, fallback) {
+  return data && !data.__error ? data : fallback;
+}
+
+function arrOr(data) {
+  if (!data || data.__error || !Array.isArray(data)) return [];
+  return data;
+}
+
+function timeLabel(value) {
+  if (!value) return 'none';
+  return String(value).slice(0, 19).replace('T', ' ');
+}
+
+function parseTime(value) {
+  if (!value) return null;
+  var normalized = String(value).trim().replace(' ', 'T');
+  normalized = normalized.replace(/(\.\d{3})\d+$/, '$1');
+  var parsed = new Date(normalized);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function relativeTime(value, now) {
+  var parsed = parseTime(value);
+  if (!parsed) return 'unknown';
+  var base = now || new Date();
+  var diffMs = base.getTime() - parsed.getTime();
+  if (diffMs < 0) diffMs = 0;
+  var diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return diffMin + 'm ago';
+  var diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return diffHr + 'h ago';
+  var diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return diffDay + 'd ago';
+  return timeLabel(value).slice(0, 10);
+}
+
+function safeJson(value) {
+  try {
+    return JSON.parse(value || '{}');
+  } catch (ex) {
+    return null;
+  }
+}
+
+function shortSession(value) {
+  return value ? String(value).slice(0, 8) : 'n/a';
+}
+
+function basenamePath(value) {
+  var parts = String(value || '').split('/').filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : '';
+}
+
+function previewText(value, limit) {
+  var text = String(value || '').replace(/\s+/g, ' ').trim();
+  var max = limit || 120;
+  if (!text) return '';
+  return text.length <= max ? text : text.slice(0, max - 1) + '...';
+}
+
+function memoryTypeLabel(fileName, content) {
+  var name = String(fileName || '').toLowerCase();
+  var match = String(content || '').match(/^type:\s*(.+)$/mi);
+  if (match && match[1]) return match[1].trim();
+  if (name === 'memory.md') return 'memory index';
+  if (name.indexOf('user_profile') !== -1) return 'user';
+  if (name.indexOf('feedback') !== -1) return 'feedback';
+  if (name.indexOf('reference') !== -1) return 'reference';
+  return 'note';
+}
+
+function memoryLeadLine(content) {
+  var lines = String(content || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line || line === '---') continue;
+    if (/^(name|description|type):/i.test(line)) continue;
+    return previewText(line, 140);
+  }
+  return 'no preview';
+}
+
+function hookEventInfo(hook) {
+  var data = safeJson(hook.data_json) || {};
+  var project = cleanProjectName(basenamePath(data.cwd || ''));
+  var detail = data.tool_name || data.notification_type || data.message || data.hook_event_name || previewText(hook.data_json || '', 100);
+  if (data.tool_name && data.notification_type) detail = data.tool_name + ' / ' + data.notification_type;
+  return {
+    when: relativeTime(hook.timestamp),
+    abs: timeLabel(hook.timestamp),
+    type: hook.event_type || '',
+    project: project || 'unknown',
+    session: shortSession(data.session_id),
+    detail: previewText(detail, 120),
+    permission_mode: data.permission_mode || '',
+    agent_type: data.agent_type || ''
+  };
+}
+
+function telemetryModelLabel(model) {
+  return String(model || '').replace(/\[[^\]]+\]$/, '');
+}
+
+function emptyNote(message) {
+  return '<div class="note">' + esc(message) + '</div>';
+}
+
+function sourceNote(label, body, cls) {
+  return '<div class="note ' + (cls || '') + '"><span class="pill">' + esc(label) + '</span>' + esc(body) + '</div>';
+}
+
+function numberFmt(value) {
+  var num = Number(value || 0);
+  if (!isFinite(num)) return '0';
+  return Math.round(num).toLocaleString();
+}
+
+function percentLabel(part, total) {
+  var numerator = Number(part || 0);
+  var denominator = Number(total || 0);
+  if (!denominator) return '0%';
+  return ((numerator / denominator) * 100).toFixed(1).replace(/\.0$/, '') + '%';
+}
+
+function durationLabel(start, end) {
+  var a = parseTime(start);
+  var b = parseTime(end);
+  if (!a || !b) return 'unknown';
+  var minutes = Math.max(0, Math.round((b.getTime() - a.getTime()) / 60000));
+  if (minutes < 60) return minutes + 'm';
+  var hours = Math.floor(minutes / 60);
+  var remMinutes = minutes % 60;
+  if (hours < 24) return hours + 'h' + (remMinutes ? ' ' + remMinutes + 'm' : '');
+  var days = Math.floor(hours / 24);
+  var remHours = hours % 24;
+  return days + 'd' + (remHours ? ' ' + remHours + 'h' : '');
+}
+
+function eventsPerHour(count, start, end) {
+  var a = parseTime(start);
+  var b = parseTime(end);
+  if (!a || !b) return null;
+  var hours = (b.getTime() - a.getTime()) / 3600000;
+  if (hours <= 0) return null;
+  return Math.round(Number(count || 0) / hours);
+}
+
+function sumField(rows, field) {
+  var total = 0;
+  for (var i = 0; i < (rows || []).length; i++) total += Number(rows[i][field] || 0);
+  return total;
+}
+
+function sortedCounts(counts) {
+  var entries = [];
+  for (var key in (counts || {})) {
+    entries.push({ key: key, count: Number(counts[key] || 0) });
+  }
+  entries.sort(function(a, b) {
+    if (b.count !== a.count) return b.count - a.count;
+    return a.key.localeCompare(b.key);
+  });
+  return entries;
+}
+
+function summaryGrid(cards) {
+  var html = '<div class="summary-grid">';
+  for (var i = 0; i < cards.length; i++) {
+    html += '<div class="summary-box"><div class="summary-value">' + esc(cards[i].value) + '</div><div class="summary-label">' + esc(cards[i].label) + '</div></div>';
+  }
+  return html + '</div>';
+}
+
+function patternBlock(title, lines) {
+  var html = '<div class="pattern-block"><div class="pattern-title">' + esc(title) + '</div>';
+  for (var i = 0; i < lines.length; i++) {
+    html += '<div class="pattern-line">' + esc(lines[i]) + '</div>';
+  }
+  return html + '</div>';
+}
+
+function softError(label, data) {
+  if (!data || !data.__error) return '';
+  return '<div class="note note-warn">' + esc(label + ' unavailable: ' + data.__error) + '</div>';
+}
+
+function cleanProjectName(raw) {
+  var value = String(raw || '');
+  var codeMarker = value.indexOf('-Code-');
+  if (value.indexOf('-Users-') === 0 && codeMarker !== -1) return value.slice(codeMarker + 6);
+  return value.replace(/^-+/, '') || value;
+}
+
+function reminderType(text) {
+  var lower = String(text || '').trim().toLowerCase();
+  if (!lower) return 'other';
+  if (lower.indexOf('the task tools haven') === 0) return 'task nudge';
+  if (lower.indexOf('this memory is ') === 0) return 'stale memory';
+  if (lower.indexOf('this is a side question from the user.') === 0) return 'side question';
+  if (lower.indexOf('the date has changed.') === 0) return 'date change';
+  if (lower.indexOf('sessionstart hook additional context:') === 0) return 'session start';
+  if (lower.indexOf('warning: the file exists but is shorter') === 0) return 'file warning';
+  if (lower.indexOf('note: ') === 0 && lower.indexOf(' was modified') !== -1) return 'file changed';
+  if (lower.indexOf('permission') !== -1 && lower.indexOf('denied') !== -1) return 'permission';
+  return 'other';
+}
+
+function reminderSourceInfo(sourceFile) {
+  var parts = String(sourceFile || '').split('/').filter(Boolean);
+  var projectIdx = parts.indexOf('projects');
+  var project = '';
+  var session = '';
+  if (projectIdx !== -1) {
+    project = cleanProjectName(parts[projectIdx + 1] || '');
+    session = parts[projectIdx + 2] || '';
+  }
+  return {
+    project: project || 'unknown project',
+    session: session ? session.slice(0, 8) : 'n/a',
+    file: parts.slice(-2).join('/')
+  };
+}
+
+function isReminderSecrecyLine(line) {
+  var lower = String(line || '').toLowerCase();
+  return lower.indexOf('never mention') !== -1 ||
+         lower.indexOf('do not mention') !== -1 ||
+         lower.indexOf("don't tell the user") !== -1 ||
+         lower.indexOf('dont tell the user') !== -1;
+}
+
+function renderReminderBody(text) {
+  var lines = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  var html = '<div class="reminder-body">';
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var cls = 'reminder-line';
+    if (!line.trim()) cls += ' blank';
+    if (isReminderSecrecyLine(line)) cls += ' secrecy';
+    html += '<div class="' + cls + '">' + (line ? esc(line) : '&nbsp;') + '</div>';
+  }
+  return html + '</div>';
+}
+
+function renderReminder(reminder) {
+  var info = reminderSourceInfo(reminder.source_file);
+  var kind = reminderType(reminder.content);
+  var html = '<div class="reminder-card">';
+  html += '<div class="reminder-top">';
+  html += '<div><span class="reminder-type">' + esc(kind) + '</span>';
+  html += '<div class="reminder-meta">' + esc(info.project) + ' / <code>' + esc(info.session) + '</code></div>';
+  html += '<div class="reminder-source">' + esc(info.file) + ':' + esc(reminder.line_number) + '</div></div>';
+  html += '<div class="reminder-time">' + esc(timeLabel(reminder.timestamp)) + '</div>';
+  html += '</div>';
+  html += renderReminderBody(reminder.content || '');
+  html += '</div>';
+  return html;
+}
+
+function tog(el, key) {
   var s = el.nextElementSibling;
-  if (s) s.classList.toggle('open');
+  if (s) {
+    s.classList.toggle('open');
+    if (key) setPanelPref(key, s.classList.contains('open'));
+  }
 }
 
 function togBody(el) {
@@ -89,8 +404,9 @@ function togBody(el) {
   if (b) b.classList.toggle('open');
 }
 
-function makeTable(headers, rows) {
-  var t = '<table><tr>';
+function makeTable(headers, rows, emptyMessage) {
+  if (!rows || rows.length === 0) return emptyNote(emptyMessage || 'no data yet');
+  var t = '<div class="table-wrap"><table><tr>';
   for (var i = 0; i < headers.length; i++) t += '<th>' + headers[i] + '</th>';
   t += '</tr>';
   for (var i = 0; i < rows.length; i++) {
@@ -98,12 +414,65 @@ function makeTable(headers, rows) {
     for (var j = 0; j < rows[i].length; j++) t += '<td>' + rows[i][j] + '</td>';
     t += '</tr>';
   }
-  return t + '</table>';
+  return t + '</table></div>';
+}
+
+function telemetryFamily(event) {
+  var value = String(event || '');
+  if (value.indexOf('tengu_tool_use_') === 0) return 'tool use';
+  if (value.indexOf('tengu_tool_search_mode_') === 0) return 'tool planning';
+  if (value.indexOf('tengu_api_') === 0) return 'api pipeline';
+  if (value.indexOf('tengu_sysprompt') === 0) return 'system prompt';
+  if (value.indexOf('cost_threshold') !== -1) return 'cost threshold';
+  return 'other';
+}
+
+function rollupTelemetryFamilies(rows) {
+  var totals = {};
+  for (var i = 0; i < (rows || []).length; i++) {
+    var family = telemetryFamily(rows[i].event);
+    totals[family] = (totals[family] || 0) + Number(rows[i].count || 0);
+  }
+  var out = [];
+  for (var key in totals) out.push({ family: key, count: totals[key] });
+  out.sort(function(a, b) {
+    if (b.count !== a.count) return b.count - a.count;
+    return a.family.localeCompare(b.family);
+  });
+  return out;
+}
+
+var DEFAULT_OPEN_PANELS = {
+  state: true,
+  correlations: true
+};
+
+function getPanelPrefs() {
+  try {
+    var raw = localStorage.getItem('harnesster.panels');
+    return raw ? JSON.parse(raw) : {};
+  } catch (ex) {
+    return {};
+  }
+}
+
+function setPanelPref(key, value) {
+  try {
+    var prefs = getPanelPrefs();
+    prefs[key] = !!value;
+    localStorage.setItem('harnesster.panels', JSON.stringify(prefs));
+  } catch (ex) {}
+}
+
+function panelClass(key) {
+  var prefs = getPanelPrefs();
+  var isOpen = Object.prototype.hasOwnProperty.call(prefs, key) ? !!prefs[key] : !!DEFAULT_OPEN_PANELS[key];
+  return 'panel' + (isOpen ? ' open' : '');
 }
 
 function loadMessages(agentId, el) {
   if (el.dataset.loaded) { el.classList.toggle('open'); return; }
-  el.textContent = 'loading...';
+  el.innerHTML = '<div class="note">loading conversation…</div>';
   el.classList.add('open');
   api('/api/messages?agent_id=' + agentId + '&limit=1000').then(function(msgs) {
     var html = '';
@@ -112,271 +481,750 @@ function loadMessages(agentId, el) {
       var cls = m.role === 'user' ? 'msg-user' : m.role === 'assistant' ? 'msg-assistant' : 'msg-system';
       html += '<div class="msg ' + cls + '"><span class="role">' + esc(m.role) + '</span>' + esc(m.content) + '</div>';
     }
-    el.innerHTML = html || 'no messages';
+    el.innerHTML = html || emptyNote('no stored messages');
     el.dataset.loaded = '1';
+  }).catch(function(err) {
+    el.innerHTML = '<div class="alert">failed to load conversation: ' + esc(err.message || err) + '</div>';
+  });
+}
+
+function runIngest() {
+  var btn = document.getElementById('ingestBtn');
+  var gen = document.getElementById('gen');
+  var original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'ingesting...';
+  gen.textContent = 'running ingest from local Claude data...';
+  api('/api/ingest', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}'
+  }).then(function() {
+    btn.textContent = 'ingest complete';
+    return loadAll();
+  }).catch(function(err) {
+    gen.textContent = 'ingest failed: ' + (err.message || err);
+  }).finally(function() {
+    setTimeout(function() {
+      btn.disabled = false;
+      btn.textContent = original;
+    }, 500);
   });
 }
 
 function loadAll() {
   var app = document.getElementById('app');
   app.innerHTML = '<div class="note">loading data...</div>';
+  document.getElementById('gen').textContent = 'loading dashboard view...';
 
   Promise.all([
-    api('/api/summary'),
-    api('/api/tokens'),
-    api('/api/sessions?limit=500'),
-    api('/api/agents?limit=50'),
-    api('/api/reminders?limit=30'),
-    api('/api/hooks?limit=50'),
-    api('/api/memory?limit=200'),
-    api('/api/tasks?limit=200'),
-    api('/api/telemetry?limit=100'),
-    api('/api/states'),
-    api('/api/analyze?limit=5000'),
-    api('/api/correlations?project_limit=100&event_limit=100&session_limit=200')
+    apiSoft('/api/summary', {}),
+    apiSoft('/api/status', {}),
+    apiSoft('/api/tokens', { totals: {}, sessions: [] }),
+    apiSoft('/api/sessions?limit=500', []),
+    apiSoft('/api/agents?limit=120', []),
+    apiSoft('/api/reminders?limit=30', []),
+    apiSoft('/api/hooks?limit=50', []),
+    apiSoft('/api/memory?limit=200', []),
+    apiSoft('/api/tasks?limit=200', []),
+    apiSoft('/api/telemetry?limit=100', []),
+    apiSoft('/api/states', {}),
+    apiSoft('/api/analyze?limit=5000', {}),
+    apiSoft('/api/correlations?project_limit=100&event_limit=100&session_limit=200', {})
   ]).then(function(results) {
-    var sum = results[0];
-    var tok = results[1];
-    var sessions = results[2];
-    var agents = results[3];
-    var reminders = results[4];
-    var hooks = results[5];
-    var memory = results[6];
-    var tasks = results[7];
-    var telemetry = results[8];
-    var statesDiag = results[9];
-    var analysis = results[10];
-    var corr = results[11];
+    var sumRaw = results[0];
+    var statusRaw = results[1];
+    var tokRaw = results[2];
+    var sessionsRaw = results[3];
+    var agentsRaw = results[4];
+    var remindersRaw = results[5];
+    var hooksRaw = results[6];
+    var memoryRaw = results[7];
+    var tasksRaw = results[8];
+    var telemetryRaw = results[9];
+    var statesDiagRaw = results[10];
+    var analysisRaw = results[11];
+    var corrRaw = results[12];
 
-    var tt = tok.totals;
+    var sum = valOr(sumRaw, {});
+    var status = valOr(statusRaw, {});
+    var tok = valOr(tokRaw, { totals: {}, sessions: [] });
+    var sessions = arrOr(sessionsRaw);
+    var agents = arrOr(agentsRaw);
+    var reminders = arrOr(remindersRaw);
+    var hooks = arrOr(hooksRaw);
+    var memory = arrOr(memoryRaw);
+    var tasks = arrOr(tasksRaw);
+    var telemetry = arrOr(telemetryRaw);
+    var statesDiag = valOr(statesDiagRaw, { hidden: {}, states: {} });
+    statesDiag.hidden = statesDiag.hidden || {};
+    statesDiag.states = statesDiag.states || {};
+    var analysis = valOr(analysisRaw, {});
+    var corr = valOr(corrRaw, {});
+
+    var tt = tok.totals || {};
+    var hiddenPct = tt.hidden_data_pct || 0;
+    var visPct = Math.max(0, Math.round(100 - hiddenPct));
+    var loadedAt = new Date().toISOString().slice(0, 19);
     var o = '';
 
-    // === SUMMARY CARDS ===
+    if (status.settings_parse_error) {
+      o += '<div class="onboard"><h3>setup status</h3><p>Claude Code settings were found but could not be parsed.</p><div class="steps"><div><code>' + esc(status.settings_parse_error) + '</code></div></div></div>';
+    } else if (!status.has_settings) {
+      o += '<div class="onboard"><h3>getting started</h3><p>Claude Code settings were not found on this machine yet, so harnesster has nothing to hook into.</p><div class="steps"><div>1. Install and launch Claude Code once so <code>~/.claude/settings.json</code> exists.</div><div>2. Run <code>python3 harnesster.py --setup</code>.</div><div>3. Restart Claude Code, use it, then click <code>ingest now</code>.</div></div></div>';
+    } else if (!status.installed_probe_exists || !status.hooks_configured) {
+      o += '<div class="onboard"><h3>setup incomplete</h3><p>harnesster can read the database, but Claude Code hooks are not fully installed yet.</p><div class="steps"><div>1. Run <code>python3 harnesster.py --setup</code>.</div><div>2. Restart Claude Code so the new hooks load.</div><div>3. Use Claude Code once, then click <code>ingest now</code>.</div></div></div>';
+    } else if ((sum.sessions || 0) === 0 && (sum.telemetry || 0) === 0 && (sum.hook_events || 0) === 0) {
+      o += '<div class="onboard"><h3>waiting for data</h3><p>The hooks appear to be installed, but this database is still empty.</p><div class="steps"><div>1. Restart Claude Code after setup.</div><div>2. Use Claude Code for a session.</div><div>3. Click <code>ingest now</code> or run <code>python3 harnesster.py --ingest</code>.</div></div></div>';
+    }
+
     o += '<div class="cards">';
-    o += '<div class="card warn" onclick="document.getElementById(\'sec-reminders\').scrollIntoView()"><div class="v">' + sum.system_reminders + '</div><div class="l">hidden instructions</div></div>';
-    o += '<div class="card warn" onclick="document.getElementById(\'sec-data\').scrollIntoView()"><div class="v">' + tt.hidden_data_pct + '%</div><div class="l">hidden data ratio</div></div>';
-    o += '<div class="card" onclick="document.getElementById(\'sec-data\').scrollIntoView()"><div class="v">' + tt.data_multiplier + 'x</div><div class="l">data multiplier</div></div>';
-    o += '<div class="card" onclick="document.getElementById(\'sec-sessions\').scrollIntoView()"><div class="v">' + sum.sessions + '</div><div class="l">sessions</div></div>';
-    o += '<div class="card" onclick="document.getElementById(\'sec-agents\').scrollIntoView()"><div class="v">' + sum.agents + '</div><div class="l">subagents</div></div>';
-    o += '<div class="card warn" onclick="document.getElementById(\'sec-data\').scrollIntoView()"><div class="v">' + tt.sidechains + '</div><div class="l">sidechains</div></div>';
-    o += '<div class="card" onclick="document.getElementById(\'sec-data\').scrollIntoView()"><div class="v">' + tt.transmissions + '</div><div class="l">API transmissions</div></div>';
-    o += '<div class="card" onclick="document.getElementById(\'sec-telemetry\').scrollIntoView()"><div class="v">' + sum.telemetry + '</div><div class="l">telemetry events</div></div>';
+    o += '<div class="card danger" onclick="document.getElementById(\'sec-reminders\').scrollIntoView()"><div class="v">' + (sum.system_reminders || 0) + '</div><div class="l">system reminders on disk</div></div>';
+    o += '<div class="card warn" onclick="document.getElementById(\'sec-data\').scrollIntoView()"><div class="v">' + hiddenPct + '%</div><div class="l">estimated hidden data ratio</div></div>';
+    o += '<div class="card warn" onclick="document.getElementById(\'sec-data\').scrollIntoView()"><div class="v">' + (tt.data_multiplier || 0) + 'x</div><div class="l">estimated data multiplier</div></div>';
+    o += '<div class="card measure" onclick="document.getElementById(\'sec-sessions\').scrollIntoView()"><div class="v">' + (sum.sessions || 0) + '</div><div class="l">measured sessions</div></div>';
+    o += '<div class="card measure" onclick="document.getElementById(\'sec-agents\').scrollIntoView()"><div class="v">' + (sum.agents || 0) + '</div><div class="l">measured subagent logs</div></div>';
+    o += '<div class="card" onclick="document.getElementById(\'sec-data\').scrollIntoView()"><div class="v">' + (tt.sidechains || 0) + '</div><div class="l">detected sidechains</div></div>';
+    o += '<div class="card warn" onclick="document.getElementById(\'sec-data\').scrollIntoView()"><div class="v">' + (tt.transmissions || 0) + '</div><div class="l">estimated API calls</div></div>';
+    o += '<div class="card measure" onclick="document.getElementById(\'sec-telemetry\').scrollIntoView()"><div class="v">' + (sum.telemetry || 0) + '</div><div class="l">telemetry rows on disk</div></div>';
     o += '</div>';
 
-    // === HIDDEN INSTRUCTION ALERT ===
-    o += '<div class="alert"><b>' + sum.system_reminders + ' hidden instructions found on disk</b> — each contains: <code>Make sure that you NEVER mention this reminder to the user</code></div>';
-    o += '<div class="dev">device fingerprint: <code>' + esc(sum.device || 'unknown') + '</code> — persistent across all sessions</div>';
-
-    // === DATA ACCOUNTING ===
     o += '<div id="sec-data"></div>';
-    o += '<h2 onclick="tog(this)">data accounting<span class="cnt">' + tt.total_data_mb + ' MB on disk</span></h2>';
-    o += '<div class="panel">';
-
-    var visPct = Math.round(100 - tt.hidden_data_pct);
-    o += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">';
-    o += '<div class="stat"><div class="v" style="font-size:18px">' + tt.visible_data_mb + ' MB</div><div class="stat-label">visible (your conversations)</div></div>';
-    o += '<div class="stat"><div class="v" style="font-size:18px;color:#f85149">' + tt.hidden_data_mb + ' MB</div><div class="stat-label">hidden channels</div></div>';
-    o += '<div class="stat"><div class="v" style="font-size:18px">' + tt.data_multiplier + 'x</div><div class="stat-label">multiplier</div></div>';
-    o += '<div class="stat"><div class="v" style="font-size:18px">' + tt.transmissions + '</div><div class="stat-label">API transmissions</div></div>';
+    o += '<h2 onclick="tog(this,\'data\')">data accounting<span class="cnt">' + (tt.total_data_mb || 0) + ' MB on disk</span></h2>';
+    o += '<div class="' + panelClass('data') + '">';
+    o += sourceNote('estimated', 'This panel estimates hidden overhead from local transcript sizes and observed channel structure. It is useful for relative cost and volume, but it is not provider billing.');
+    o += softError('data accounting', tokRaw);
+    o += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+    o += '<div class="stat"><div class="v" style="font-size:16px">' + (tt.visible_data_mb || 0) + ' MB</div><div class="stat-label">visible transcript bytes</div></div>';
+    o += '<div class="stat"><div class="v" style="font-size:16px;color:#d29922">' + (tt.hidden_data_mb || 0) + ' MB</div><div class="stat-label">estimated hidden bytes</div></div>';
+    o += '<div class="stat"><div class="v" style="font-size:16px">' + (tt.data_multiplier || 0) + 'x</div><div class="stat-label">estimated multiplier</div></div>';
+    o += '<div class="stat"><div class="v" style="font-size:16px">' + (tt.transmissions || 0) + '</div><div class="stat-label">estimated API calls</div></div>';
     o += '</div>';
-
-    o += '<div style="display:flex;font-size:10px;margin-bottom:4px"><span style="color:#3fb950">visible ' + visPct + '%</span><span style="flex:1"></span><span style="color:#f85149">hidden ' + tt.hidden_data_pct + '%</span></div>';
-    o += '<div class="bar"><div class="bar-fill bar-green" style="width:' + visPct + '%"></div><div class="bar-fill bar-red" style="width:' + tt.hidden_data_pct + '%;right:0"></div></div>';
-
-    o += '<div class="note">' + esc(tt.note) + ' — run /usage in Claude Code for actual token count</div>';
+    o += '<div style="display:flex;font-size:10px;margin-top:12px"><span style="color:#3fb950">visible ' + visPct + '%</span><span style="flex:1"></span><span style="color:#f85149">hidden ' + hiddenPct + '%</span></div>';
+    o += '<div class="bar"><div class="bar-fill bar-green" style="width:' + visPct + '%"></div><div class="bar-fill bar-red" style="width:' + hiddenPct + '%;right:0"></div></div>';
+    o += '<div class="note">' + esc(tt.note || 'data volumes from local transcripts') + ' — use /usage in Claude Code for exact billable token numbers.</div>';
 
     o += '<div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">';
-    o += '<div class="stat"><div class="v" style="font-size:16px">' + tt.subagents + '</div><div class="stat-label">subagents</div></div>';
-    o += '<div class="stat"><div class="v" style="font-size:16px;color:#d29922">' + tt.sidechains + '</div><div class="stat-label">sidechains (full ctx copy)</div></div>';
-    o += '<div class="stat"><div class="v" style="font-size:16px">' + tt.compactions + '</div><div class="stat-label">compactions</div></div>';
+    o += '<div class="stat"><div class="v" style="font-size:16px">' + (tt.subagents || 0) + '</div><div class="stat-label">subagents</div></div>';
+    o += '<div class="stat"><div class="v" style="font-size:16px;color:#d29922">' + (tt.sidechains || 0) + '</div><div class="stat-label">sidechains (full ctx copy)</div></div>';
+    o += '<div class="stat"><div class="v" style="font-size:16px">' + (tt.compactions || 0) + '</div><div class="stat-label">compactions</div></div>';
     o += '</div>';
 
-    // per session table
-    var tsessions = tok.sessions.sort(function(a,b) { return b.total_size_kb - a.total_size_kb; });
+    var tsessions = (tok.sessions || []).slice().sort(function(a,b) { return b.total_size_kb - a.total_size_kb; });
     var trows = [];
     for (var i = 0; i < Math.min(tsessions.length, 15); i++) {
       var ts = tsessions[i];
       trows.push([esc(ts.project), '<code>' + esc(ts.session_id) + '</code>', Math.round(ts.total_size_kb) + 'KB', ts.multiplier + 'x', ts.transmissions, ts.sidechain_count, ts.system_reminders]);
     }
-    o += makeTable(['project', 'session', 'size', 'mult', 'tx', 'sides', 'reminders'], trows);
+    o += makeTable(['project', 'session', 'size', 'mult', 'tx', 'sides', 'reminders'], trows, 'no session accounting data yet');
     o += '</div>';
 
-    // === SYSTEM REMINDERS ===
     o += '<div id="sec-reminders"></div>';
-    o += '<h2 onclick="tog(this)">system reminders<span class="cnt">' + sum.system_reminders + ' found</span></h2>';
-    o += '<div class="panel">';
+    o += '<h2 onclick="tog(this,\'reminders\')">system reminders<span class="cnt">' + (sum.system_reminders || 0) + ' found</span></h2>';
+    o += '<div class="' + panelClass('reminders') + '">';
+    o += sourceNote('measured', 'These rows are parsed from live user-side transcript payloads on disk. Assistant-written quotes about reminders are excluded.');
+    o += '<div class="note">Detector fix: reminder ingest now reads tagged <code>&lt;system-reminder&gt;...&lt;/system-reminder&gt;</code> payloads and the legacy <code>system-reminder ...</code> form. It no longer depends on the exact <code>NEVER mention</code> wording.</div>';
+    o += softError('reminders', remindersRaw);
     if (reminders.length === 0) {
-      o += '<div class="note">no reminders found — run ingest</div>';
+      o += emptyNote('no reminders found in the current database');
     } else {
+      var reminderCounts = {};
       for (var i = 0; i < reminders.length; i++) {
-        var r = reminders[i];
-        var fname = (r.source_file || '').split('/').slice(-2).join('/');
-        o += '<div class="item" style="border-color:#6e3030"><div style="color:#f85149;font-size:10px">' + esc(fname) + ':' + r.line_number + '</div>';
-        o += '<div class="msg msg-system" style="font-size:9px;max-height:60px;overflow:hidden">' + esc(r.content) + '</div></div>';
+        var kind = reminderType(reminders[i].content);
+        reminderCounts[kind] = (reminderCounts[kind] || 0) + 1;
       }
-      if (sum.system_reminders > reminders.length) {
-        o += '<div class="note">' + (sum.system_reminders - reminders.length) + ' more not shown</div>';
+      var reminderKinds = Object.keys(reminderCounts).sort(function(a, b) {
+        if (reminderCounts[b] !== reminderCounts[a]) return reminderCounts[b] - reminderCounts[a];
+        return a.localeCompare(b);
+      });
+      o += '<div class="reminder-summary">';
+      for (var i = 0; i < reminderKinds.length; i++) {
+        var kind = reminderKinds[i];
+        o += '<div class="reminder-chip">' + esc(kind) + ' ' + reminderCounts[kind] + '</div>';
+      }
+      o += '</div>';
+      for (var i = 0; i < reminders.length; i++) {
+        o += renderReminder(reminders[i]);
+      }
+      if ((sum.system_reminders || 0) > reminders.length) {
+        o += '<div class="note">' + ((sum.system_reminders || 0) - reminders.length) + ' more not shown</div>';
       }
     }
     o += '</div>';
 
-    // === SESSIONS ===
     o += '<div id="sec-sessions"></div>';
-    o += '<h2 onclick="tog(this)">sessions<span class="cnt">' + sessions.length + '</span></h2>';
-    o += '<div class="panel">';
-    var srows = [];
-    for (var i = 0; i < sessions.length; i++) {
-      var ss = sessions[i];
-      srows.push([esc(ss.project), '<code>' + esc((ss.session_id || '').slice(0,8)) + '</code>', esc((ss.mtime || '').slice(0,16)), ss.agent_count, ss.compaction_count]);
+    o += '<h2 onclick="tog(this,\'sessions\')">sessions<span class="cnt">' + sessions.length + '</span></h2>';
+    o += '<div class="' + panelClass('sessions') + '">';
+    o += sourceNote('measured', 'Sessions are read from local Claude project folders and refreshed from disk on each ingest.');
+    o += softError('sessions', sessionsRaw);
+    if (sessions.length === 0) {
+      o += emptyNote('no sessions ingested yet');
+    } else {
+      var loadedDate = parseTime(loadedAt) || new Date();
+      var sortedSessions = sessions.slice().sort(function(a, b) {
+        var at = parseTime(a.mtime);
+        var bt = parseTime(b.mtime);
+        var av = at ? at.getTime() : 0;
+        var bv = bt ? bt.getTime() : 0;
+        if (bv !== av) return bv - av;
+        return String(a.project || '').localeCompare(String(b.project || ''));
+      });
+      var recent24h = 0;
+      var sessionsWithCompactions = 0;
+      var totalAgents = 0;
+      var projectRollup = {};
+      for (var i = 0; i < sortedSessions.length; i++) {
+        var ss = sortedSessions[i];
+        var projectName = cleanProjectName(ss.project);
+        var parsed = parseTime(ss.mtime);
+        if (parsed && (loadedDate.getTime() - parsed.getTime()) <= 86400000) recent24h += 1;
+        if ((ss.compaction_count || 0) > 0) sessionsWithCompactions += 1;
+        totalAgents += (ss.agent_count || 0);
+        if (!projectRollup[projectName]) {
+          projectRollup[projectName] = {
+            project: projectName,
+            sessions: 0,
+            last_active: ss.mtime || '',
+            last_active_ts: parsed ? parsed.getTime() : 0,
+            agents: 0,
+            compactions: 0
+          };
+        }
+        var bucket = projectRollup[projectName];
+        bucket.sessions += 1;
+        bucket.agents += (ss.agent_count || 0);
+        bucket.compactions += (ss.compaction_count || 0);
+        if (parsed && parsed.getTime() > bucket.last_active_ts) {
+          bucket.last_active = ss.mtime || '';
+          bucket.last_active_ts = parsed.getTime();
+        }
+      }
+
+      var avgAgents = Math.round((totalAgents / Math.max(1, sortedSessions.length)) * 10) / 10;
+      o += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + recent24h + '</div><div class="stat-label">active in last 24h</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + Object.keys(projectRollup).length + '</div><div class="stat-label">active projects</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + sessionsWithCompactions + '</div><div class="stat-label">sessions with compactions</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + avgAgents + '</div><div class="stat-label">avg agent logs per session</div></div>';
+      o += '</div>';
+      o += '<div class="note"><span class="pill">projects</span>Grouped by project and sorted by most recent session activity.</div>';
+
+      var projectRows = Object.keys(projectRollup).map(function(key) { return projectRollup[key]; }).sort(function(a, b) {
+        if (b.last_active_ts !== a.last_active_ts) return b.last_active_ts - a.last_active_ts;
+        if (b.sessions !== a.sessions) return b.sessions - a.sessions;
+        return a.project.localeCompare(b.project);
+      });
+      var pRows = [];
+      for (var i = 0; i < Math.min(projectRows.length, 12); i++) {
+        var pr = projectRows[i];
+        pRows.push([
+          esc(pr.project),
+          pr.sessions,
+          '<span title="' + esc(timeLabel(pr.last_active)) + '">' + esc(relativeTime(pr.last_active, loadedDate)) + '</span>',
+          pr.agents,
+          pr.compactions
+        ]);
+      }
+      o += makeTable(['project', 'sessions', 'last active', 'agents', 'compactions'], pRows, 'no project rollup available yet');
+
+      o += '<div class="note"><span class="pill">recent</span>Most recent sessions across all projects, sorted by last local activity.</div>';
+      var srows = [];
+      for (var i = 0; i < Math.min(sortedSessions.length, 24); i++) {
+        var ss = sortedSessions[i];
+        srows.push([
+          '<span title="' + esc(timeLabel(ss.mtime)) + '">' + esc(relativeTime(ss.mtime, loadedDate)) + '</span>',
+          esc(cleanProjectName(ss.project)),
+          '<code>' + esc((ss.session_id || '').slice(0,8)) + '</code>',
+          ss.agent_count || 0,
+          ss.compaction_count || 0
+        ]);
+      }
+      o += makeTable(['last active', 'project', 'session', 'agents', 'compactions'], srows, 'no recent sessions available');
     }
-    o += makeTable(['project', 'session', 'last active', 'agents', 'compactions'], srows);
     o += '</div>';
 
-    // === AGENTS ===
     o += '<div id="sec-agents"></div>';
-    o += '<h2 onclick="tog(this)">agents & compactions<span class="cnt">' + agents.length + ' shown</span></h2>';
-    o += '<div class="panel">';
-    for (var i = 0; i < agents.length; i++) {
-      var a = agents[i];
-      var acls = a.is_compaction ? ' item-head-warn' : '';
-      var alabel = a.is_compaction ? 'compaction' : 'agent';
-      var aborder = a.is_compaction ? 'border-color:#d29922' : '';
-      var kb = Math.round(a.size_bytes / 1024);
-      var bodyId = 'ag-' + a.id;
-      o += '<div class="item" style="' + aborder + '">';
-      o += '<div class="item-head' + acls + '" onclick="loadMessages(' + a.id + ',document.getElementById(\'' + bodyId + '\'))">';
-      o += alabel + ': ' + esc(a.project) + ' / ' + esc((a.session_id || '').slice(0,8)) + ' — ' + kb + 'KB, ' + a.message_count + ' msgs</div>';
-      o += '<div class="item-body" id="' + bodyId + '"></div></div>';
+    o += '<h2 onclick="tog(this,\'agents\')">agents & compactions<span class="cnt">' + ((sum.agents || 0) + (sum.compactions || 0)) + ' total, ' + agents.length + ' recent shown</span></h2>';
+    o += '<div class="' + panelClass('agents') + '">';
+    o += sourceNote('measured', 'This panel shows the most recent local subagent and compaction transcript files. Project rollups below are based on the recent window shown here, not the full historical inventory.');
+    o += softError('agents', agentsRaw);
+    if (agents.length === 0) {
+      o += emptyNote('no subagent logs ingested yet');
+    } else {
+      var sortedAgents = agents.slice().sort(function(a, b) {
+        var at = parseTime(a.mtime);
+        var bt = parseTime(b.mtime);
+        var av = at ? at.getTime() : 0;
+        var bv = bt ? bt.getTime() : 0;
+        if (bv !== av) return bv - av;
+        return (b.size_bytes || 0) - (a.size_bytes || 0);
+      });
+      var loadedDate = parseTime(loadedAt) || new Date();
+      var shownCompactions = 0;
+      var shownMessages = 0;
+      var shownBytes = 0;
+      var recentProjects = {};
+      for (var i = 0; i < sortedAgents.length; i++) {
+        var a = sortedAgents[i];
+        if (a.is_compaction) shownCompactions += 1;
+        shownMessages += (a.message_count || 0);
+        shownBytes += (a.size_bytes || 0);
+        var projectName = cleanProjectName(a.project);
+        var parsed = parseTime(a.mtime);
+        if (!recentProjects[projectName]) {
+          recentProjects[projectName] = {
+            project: projectName,
+            logs: 0,
+            compactions: 0,
+            messages: 0,
+            bytes: 0,
+            last_active: a.mtime || '',
+            last_active_ts: parsed ? parsed.getTime() : 0
+          };
+        }
+        var bucket = recentProjects[projectName];
+        bucket.logs += 1;
+        bucket.compactions += a.is_compaction ? 1 : 0;
+        bucket.messages += (a.message_count || 0);
+        bucket.bytes += (a.size_bytes || 0);
+        if (parsed && parsed.getTime() > bucket.last_active_ts) {
+          bucket.last_active = a.mtime || '';
+          bucket.last_active_ts = parsed.getTime();
+        }
+      }
+
+      o += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + (sortedAgents.length - shownCompactions) + '</div><div class="stat-label">recent subagent logs</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + shownCompactions + '</div><div class="stat-label">recent compactions</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + shownMessages + '</div><div class="stat-label">messages in recent window</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + Math.round(shownBytes / 1024 / 1024 * 10) / 10 + ' MB</div><div class="stat-label">recent transcript bytes</div></div>';
+      o += '</div>';
+
+      o += '<div class="note"><span class="pill">projects</span>Recent agent activity grouped by project, using the current window of ' + sortedAgents.length + ' most recent logs.</div>';
+      var projectRows = Object.keys(recentProjects).map(function(key) { return recentProjects[key]; }).sort(function(a, b) {
+        if (b.last_active_ts !== a.last_active_ts) return b.last_active_ts - a.last_active_ts;
+        if (b.logs !== a.logs) return b.logs - a.logs;
+        return a.project.localeCompare(b.project);
+      });
+      var pRows = [];
+      for (var i = 0; i < Math.min(projectRows.length, 12); i++) {
+        var pr = projectRows[i];
+        pRows.push([
+          esc(pr.project),
+          pr.logs,
+          pr.compactions,
+          pr.messages,
+          '<span title="' + esc(timeLabel(pr.last_active)) + '">' + esc(relativeTime(pr.last_active, loadedDate)) + '</span>'
+        ]);
+      }
+      o += makeTable(['project', 'logs', 'compactions', 'messages', 'last active'], pRows, 'no recent project activity yet');
+
+      o += '<div class="note"><span class="pill">recent</span>Latest local agent and compaction transcript files. Click any row to inspect the stored conversation excerpt.</div>';
+      for (var i = 0; i < Math.min(sortedAgents.length, 60); i++) {
+        var a = sortedAgents[i];
+        var acls = a.is_compaction ? ' item-head-warn' : '';
+        var alabel = a.is_compaction ? 'compaction' : 'agent';
+        var aborder = a.is_compaction ? 'border-color:#d29922' : '';
+        var kb = Math.round((a.size_bytes || 0) / 1024);
+        var bodyId = 'ag-' + a.id;
+        var rel = relativeTime(a.mtime, loadedDate);
+        o += '<div class="item" style="' + aborder + '">';
+        o += '<div class="item-head' + acls + '" onclick="loadMessages(' + a.id + ',document.getElementById(\'' + bodyId + '\'))">';
+        o += alabel + ': ' + esc(cleanProjectName(a.project)) + ' / <code>' + esc((a.session_id || '').slice(0,8)) + '</code> — ' + esc(rel) + ' — ' + kb + 'KB, ' + (a.message_count || 0) + ' msgs</div>';
+        o += '<div class="item-body" id="' + bodyId + '"></div></div>';
+      }
+      if (sortedAgents.length > 60) {
+        o += '<div class="note">' + (sortedAgents.length - 60) + ' more recent logs not shown in the expanded list</div>';
+      }
     }
     o += '</div>';
 
-    // === MEMORY ===
-    o += '<h2 onclick="tog(this)">memory files<span class="cnt">' + memory.length + '</span></h2>';
-    o += '<div class="panel">';
-    for (var i = 0; i < memory.length; i++) {
-      var mm = memory[i];
-      o += '<div class="item"><div class="item-head" onclick="togBody(this)">' + esc(mm.project) + ' / ' + esc(mm.file_name) + '</div>';
-      o += '<div class="item-body" style="color:#8b949e;font-size:10px;white-space:pre-wrap">' + esc(mm.content) + '</div></div>';
+    o += '<h2 onclick="tog(this,\'memory\')">memory files<span class="cnt">' + memory.length + '</span></h2>';
+    o += '<div class="' + panelClass('memory') + '">';
+    o += sourceNote('measured', 'These are local project memory files, truncated for display.');
+    o += softError('memory files', memoryRaw);
+    if (memory.length === 0) {
+      o += emptyNote('no memory files found');
+    } else {
+      var memoryProjects = {};
+      var memoryIndexes = 0;
+      var typedMemory = 0;
+      for (var i = 0; i < memory.length; i++) {
+        var mm = memory[i];
+        var projectName = cleanProjectName(mm.project);
+        var kind = memoryTypeLabel(mm.file_name, mm.content);
+        if (kind === 'memory index') memoryIndexes += 1;
+        if (kind !== 'note') typedMemory += 1;
+        if (!memoryProjects[projectName]) {
+          memoryProjects[projectName] = { project: projectName, files: 0, names: [] };
+        }
+        memoryProjects[projectName].files += 1;
+        memoryProjects[projectName].names.push(mm.file_name);
+      }
+      o += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + Object.keys(memoryProjects).length + '</div><div class="stat-label">projects with memory</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + memoryIndexes + '</div><div class="stat-label">memory index files</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + typedMemory + '</div><div class="stat-label">typed notes</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + memory.length + '</div><div class="stat-label">files shown</div></div>';
+      o += '</div>';
+      o += '<div class="note"><span class="pill">projects</span>Grouped by project, using the currently loaded memory files.</div>';
+      var memoryRows = Object.keys(memoryProjects).map(function(key) { return memoryProjects[key]; }).sort(function(a, b) {
+        if (b.files !== a.files) return b.files - a.files;
+        return a.project.localeCompare(b.project);
+      });
+      var mrows = [];
+      for (var i = 0; i < Math.min(memoryRows.length, 12); i++) {
+        var mp = memoryRows[i];
+        mrows.push([esc(mp.project), mp.files, esc(mp.names.slice(0, 3).join(', '))]);
+      }
+      o += makeTable(['project', 'files', 'top files'], mrows, 'no memory project summary available');
+
+      o += '<div class="note"><span class="pill">files</span>Click any file to expand the stored content.</div>';
+      var sortedMemory = memory.slice().sort(function(a, b) {
+        var pa = cleanProjectName(a.project);
+        var pb = cleanProjectName(b.project);
+        if (pa !== pb) return pa.localeCompare(pb);
+        return String(a.file_name || '').localeCompare(String(b.file_name || ''));
+      });
+      for (var i = 0; i < sortedMemory.length; i++) {
+        var mm = sortedMemory[i];
+        var kind = memoryTypeLabel(mm.file_name, mm.content);
+        var preview = memoryLeadLine(mm.content);
+        o += '<div class="item"><div class="item-head" onclick="togBody(this)">' + esc(cleanProjectName(mm.project)) + ' / ' + esc(mm.file_name) + ' — ' + esc(kind) + ' — ' + esc(preview) + '</div>';
+        o += '<div class="item-body" style="color:#8b949e;font-size:10px;white-space:pre-wrap">' + esc(mm.content) + '</div></div>';
+      }
     }
     o += '</div>';
 
-    // === PROBE EVENTS ===
-    o += '<h2 onclick="tog(this)">probe events<span class="cnt">' + hooks.length + ' shown</span></h2>';
-    o += '<div class="panel">';
-    var hrows = [];
-    for (var i = 0; i < hooks.length; i++) {
-      var he = hooks[i];
-      var ht = (he.timestamp || '').slice(0,19);
-      var hd = '';
-      try {
-        var hj = JSON.parse(he.data_json || '{}');
-        hd = hj.tool_name || hj.notification_type || hj.message || hj.hook_event_name || (he.data_json || '').slice(0,80);
-      } catch(ex) { hd = (he.data_json || '').slice(0,80); }
-      hrows.push([esc(ht), esc(he.event_type), esc(hd)]);
+    o += '<h2 onclick="tog(this,\'probes\')">probe events<span class="cnt">' + hooks.length + ' shown</span></h2>';
+    o += '<div class="' + panelClass('probes') + '">';
+    o += sourceNote('measured', 'Hook events come from the locally installed harness probe. If this section is empty, setup may be incomplete or Claude Code has not been restarted yet.');
+    o += softError('probe events', hooksRaw);
+    if (hooks.length === 0) {
+      o += emptyNote('no probe events stored yet');
+    } else {
+      var hookTypeCounts = {};
+      var permissionRelated = 0;
+      var toolLifecycle = 0;
+      var uniqueHookSessions = {};
+      for (var i = 0; i < hooks.length; i++) {
+        var info = hookEventInfo(hooks[i]);
+        hookTypeCounts[info.type] = (hookTypeCounts[info.type] || 0) + 1;
+        if (info.type === 'perm_request' || info.detail.indexOf('permission_prompt') !== -1) permissionRelated += 1;
+        if (info.type === 'pretool' || info.type === 'posttool' || info.type === 'posttool_fail') toolLifecycle += 1;
+        uniqueHookSessions[info.session] = 1;
+      }
+      o += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + hooks.length + '</div><div class="stat-label">events shown</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + Object.keys(hookTypeCounts).length + '</div><div class="stat-label">event types in shown window</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + permissionRelated + '</div><div class="stat-label">permission-related events</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + toolLifecycle + '</div><div class="stat-label">tool lifecycle events</div></div>';
+      o += '</div>';
+      var hookRows = Object.keys(hookTypeCounts).sort(function(a, b) {
+        if (hookTypeCounts[b] !== hookTypeCounts[a]) return hookTypeCounts[b] - hookTypeCounts[a];
+        return a.localeCompare(b);
+      });
+      var hookCountRows = [];
+      for (var i = 0; i < Math.min(hookRows.length, 10); i++) {
+        hookCountRows.push([esc(hookRows[i]), hookTypeCounts[hookRows[i]]]);
+      }
+      o += '<div class="note"><span class="pill">types</span>Event type counts in the current probe window.</div>';
+      o += makeTable(['event type', 'count'], hookCountRows, 'no event type summary available');
+      var hrows = [];
+      for (var i = 0; i < hooks.length; i++) {
+        var info = hookEventInfo(hooks[i]);
+        var detail = info.detail;
+        if (info.permission_mode) detail += ' — ' + info.permission_mode;
+        hrows.push([
+          '<span title="' + esc(info.abs) + '">' + esc(info.when) + '</span>',
+          esc(info.type),
+          esc(info.project),
+          '<code>' + esc(info.session) + '</code>',
+          esc(detail)
+        ]);
+      }
+      o += '<div class="note"><span class="pill">recent</span>Most recent hook events with project/session context.</div>';
+      o += makeTable(['when', 'type', 'project', 'session', 'detail'], hrows, 'no probe events stored yet');
     }
-    o += makeTable(['time', 'type', 'detail'], hrows);
     o += '</div>';
 
-    // === TELEMETRY ===
     o += '<div id="sec-telemetry"></div>';
-    o += '<h2 onclick="tog(this)">telemetry<span class="cnt">' + sum.telemetry + ' total, 100 shown</span></h2>';
-    o += '<div class="panel">';
-    var trows2 = [];
-    for (var i = 0; i < telemetry.length; i++) {
-      var te = telemetry[i];
-      trows2.push([esc((te.time || '').slice(0,19)), '<code>' + esc((te.session_id || '').slice(0,8)) + '</code>', esc(te.event), 'v' + esc(te.version)]);
+    o += '<h2 onclick="tog(this,\'telemetry\')">telemetry on disk<span class="cnt">' + (sum.telemetry || 0) + ' total, 100 shown</span></h2>';
+    o += '<div class="' + panelClass('telemetry') + '">';
+    o += sourceNote('measured', 'These are telemetry rows still present on disk. This section does not prove what was successfully uploaded and deleted elsewhere.');
+    o += softError('telemetry', telemetryRaw);
+    if (telemetry.length === 0) {
+      o += emptyNote('no telemetry rows retained on disk');
+    } else {
+      var telemetryCounts = {};
+      var telemetrySessions = {};
+      for (var i = 0; i < telemetry.length; i++) {
+        var te = telemetry[i];
+        telemetryCounts[te.event || 'unknown'] = (telemetryCounts[te.event || 'unknown'] || 0) + 1;
+        telemetrySessions[shortSession(te.session_id)] = 1;
+      }
+      o += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + telemetry.length + '</div><div class="stat-label">rows shown</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + Object.keys(telemetryCounts).length + '</div><div class="stat-label">retained event types</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + Object.keys(telemetrySessions).length + '</div><div class="stat-label">sessions in shown window</div></div>';
+      o += '<div class="stat"><div class="v" style="font-size:16px">' + esc(relativeTime(telemetry[0].time)) + '</div><div class="stat-label">latest retained row</div></div>';
+      o += '</div>';
+      var telemetryKeys = Object.keys(telemetryCounts).sort(function(a, b) {
+        if (telemetryCounts[b] !== telemetryCounts[a]) return telemetryCounts[b] - telemetryCounts[a];
+        return a.localeCompare(b);
+      });
+      var tfrows = [];
+      for (var i = 0; i < Math.min(telemetryKeys.length, 12); i++) {
+        tfrows.push([esc(telemetryKeys[i]), telemetryCounts[telemetryKeys[i]]]);
+      }
+      o += '<div class="note"><span class="pill">types</span>Telemetry event counts in the retained slice currently on disk.</div>';
+      o += makeTable(['event', 'count'], tfrows, 'no telemetry summary available');
+      var trows2 = [];
+      for (var i = 0; i < telemetry.length; i++) {
+        var te = telemetry[i];
+        trows2.push([
+          '<span title="' + esc(timeLabel(te.time)) + '">' + esc(relativeTime(te.time)) + '</span>',
+          esc(te.event),
+          '<code>' + esc(shortSession(te.session_id)) + '</code>',
+          'v' + esc(te.version),
+          esc(telemetryModelLabel(te.model))
+        ]);
+      }
+      o += '<div class="note"><span class="pill">recent</span>Latest retained telemetry rows with session and model context.</div>';
+      o += makeTable(['when', 'event', 'session', 'version', 'model'], trows2, 'no telemetry rows retained on disk');
     }
-    o += makeTable(['time', 'session', 'event', 'version'], trows2);
     o += '</div>';
 
-    // === STATE MACHINE ===
     if (analysis && analysis.state_counts) {
-      o += '<h2 onclick="tog(this)">state machine<span class="cnt">' + (analysis.hidden_count + analysis.visible_count) + ' events</span></h2>';
-      o += '<div class="panel">';
+      o += '<h2 onclick="tog(this,\'state\')">inferred state model<span class="cnt">' + ((analysis.hidden_count || 0) + (analysis.visible_count || 0)) + ' events</span></h2>';
+      o += '<div class="' + panelClass('state') + '">';
+      o += sourceNote('inferred', 'Heuristic read from local hooks and reminder rows. It does not expose Claude internals.', 'note-warn');
+      o += softError('state model', analysisRaw.__error ? analysisRaw : statesDiagRaw);
 
       var sc = analysis.state_counts;
-      var scrows = [];
-      for (var k in sc) {
-        var hidden = statesDiag.hidden[k] ? ' <span style="color:#f85149">[HIDDEN]</span>' : '';
-        scrows.push([k + hidden, sc[k], esc(statesDiag.states[k] || '')]);
-      }
-      o += makeTable(['state', 'count', 'description'], scrows);
+      var stateTotal = (analysis.hidden_count || 0) + (analysis.visible_count || 0);
+      var toolLoopCount = (sc.TOOL_PRE || 0) + (sc.TOOL_POST || 0) + (sc.TOOL_ACTIVE || 0);
+      var reminderCount = sc.REMINDER_INJECT || analysis.reminders_on_disk || 0;
+      var anomalyCount = (analysis.anomalies || []).length;
+      var stateEntries = sortedCounts(sc);
+      var dominantState = stateEntries.length ? stateEntries[0] : null;
 
-      o += '<div style="margin:8px 0;font-size:11px"><span style="color:#3fb950">visible: ' + analysis.visible_count + '</span> — <span style="color:#f85149">hidden: ' + analysis.hidden_count + '</span></div>';
+      o += summaryGrid([
+        { value: numberFmt(stateTotal), label: 'modeled events in slice' },
+        { value: percentLabel(analysis.hidden_count || 0, stateTotal), label: 'hidden share' },
+        { value: percentLabel(toolLoopCount, stateTotal), label: 'tool-loop share' },
+        { value: numberFmt(reminderCount), label: 'reminders on disk' }
+      ]);
+
+      var stateDigest = [];
+      if (dominantState) {
+        stateDigest.push('Dominant mode: ' + dominantState.key + ' at ' + percentLabel(dominantState.count, stateTotal) + ' of modeled events.');
+      }
+      if (toolLoopCount > 0) {
+        stateDigest.push('Tool boundaries make up ' + percentLabel(toolLoopCount, stateTotal) + ', so the current slice reads as execution-heavy.');
+      }
+      if (reminderCount > 0) {
+        stateDigest.push('Reminder pressure adds ' + numberFmt(reminderCount) + ' modeled hidden events from retained reminder rows.');
+      }
+      if (anomalyCount > 0) {
+        stateDigest.push('Heuristics flagged ' + numberFmt(anomalyCount) + ' anomaly pattern' + (anomalyCount === 1 ? '' : 's') + '.');
+      } else {
+        stateDigest.push('No anomaly heuristics fired in this slice.');
+      }
+      o += patternBlock('current read', stateDigest);
+
+      var scrows = [];
+      for (var i = 0; i < Math.min(stateEntries.length, 6); i++) {
+        var entry = stateEntries[i];
+        var stateLabel = entry.key + (statesDiag.hidden[entry.key] ? ' [hidden]' : '');
+        scrows.push([esc(stateLabel), percentLabel(entry.count, stateTotal), numberFmt(entry.count), esc(statesDiag.states[entry.key] || '')]);
+      }
+      o += '<div class="note"><span class="pill">mix</span>Largest modeled states in the current slice.</div>';
+      o += makeTable(['state', 'share', 'count', 'description'], scrows, 'no inferred state activity yet');
 
       if (analysis.anomalies && analysis.anomalies.length > 0) {
+        o += '<div class="note"><span class="pill">anomalies</span>Heuristic patterns that actually fired in the current slice.</div>';
         for (var i = 0; i < analysis.anomalies.length; i++) {
           var an = analysis.anomalies[i];
           o += '<div class="alert">' + esc(an.type) + ': ' + esc(an.description) + '</div>';
         }
       }
 
-      // hidden behaviors
-      o += '<div style="margin-top:12px">';
+      var hiddenRows = [];
       for (var hk in statesDiag.hidden) {
         var hb = statesDiag.hidden[hk];
-        o += '<div class="item" style="border-color:#6e3030"><div style="color:#f85149;font-size:10px;font-weight:bold">' + esc(hk) + '</div>';
-        o += '<div style="font-size:10px">trigger: ' + esc(hb.trigger) + '</div>';
-        o += '<div style="font-size:10px;color:#8b949e">effect: ' + esc(hb.effect) + '</div></div>';
+        var observed = sc[hk] || 0;
+        if (observed > 0) hiddenRows.push([esc(hk), percentLabel(observed, stateTotal), esc(hb.trigger), esc(hb.effect)]);
       }
-      o += '</div></div>';
+      o += '<div class="note"><span class="pill">hidden</span>Hidden mechanisms that were active in this slice.</div>';
+      o += makeTable(['state', 'share', 'trigger', 'effect'], hiddenRows, 'no modeled hidden mechanisms were active in the current slice');
+      o += '</div>';
     }
 
-    // === CORRELATIONS ===
     if (corr) {
-      o += '<h2 onclick="tog(this)">correlations</h2>';
-      o += '<div class="panel">';
+      o += '<h2 onclick="tog(this,\'correlations\')">correlations</h2>';
+      o += '<div class="' + panelClass('correlations') + '">';
+      o += sourceNote('derived', 'Cross-signal rollups from the local database. They can lag until ingest runs.');
+      o += softError('correlations', corrRaw);
 
-      if (corr.agents_per_project && corr.agents_per_project.length > 0) {
-        o += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px">agents per project</div>';
+      var projectRows = corr.agents_per_project || [];
+      var telemetryRows = corr.telemetry_by_type || [];
+      var sessionRows = (corr.session_spans || []).slice();
+      var hookRows = corr.hook_timeline || [];
+      var hookTotals = corr.hook_totals || [];
+      var totalProjectLogs = sumField(projectRows, 'total');
+      var totalTelemetryEvents = sumField(telemetryRows, 'count');
+      var topProjectLogs = sumField(projectRows.slice(0, 3), 'total');
+      var familyRows = rollupTelemetryFamilies(telemetryRows);
+      var knownFamilyRows = familyRows.filter(function(row) { return row.family !== 'other'; });
+      var leadFamily = (knownFamilyRows[0] || familyRows[0] || null);
+      var executionTelemetryCount = 0;
+      for (var i = 0; i < familyRows.length; i++) {
+        if (familyRows[i].family === 'tool use' || familyRows[i].family === 'tool planning' || familyRows[i].family === 'api pipeline') {
+          executionTelemetryCount += familyRows[i].count;
+        }
+      }
+      var compactionRows = projectRows.slice().filter(function(row) {
+        return Number(row.total || 0) > 0;
+      });
+      compactionRows.sort(function(a, b) {
+        var ar = Number(a.compactions || 0) / Math.max(1, Number(a.total || 0));
+        var br = Number(b.compactions || 0) / Math.max(1, Number(b.total || 0));
+        if (br !== ar) return br - ar;
+        return Number(b.total || 0) - Number(a.total || 0);
+      });
+      var compactionLeader = compactionRows[0] || null;
+      var hookCounts = {};
+      if (hookTotals.length > 0) {
+        for (var i = 0; i < hookTotals.length; i++) {
+          hookCounts[hookTotals[i].event_type || 'unknown'] = Number(hookTotals[i].count || 0);
+        }
+      } else {
+        for (var i = 0; i < hookRows.length; i++) {
+          hookCounts[hookRows[i].event_type || 'unknown'] = (hookCounts[hookRows[i].event_type || 'unknown'] || 0) + Number(hookRows[i].count || 0);
+        }
+      }
+      var hookTotal = 0;
+      for (var hk in hookCounts) hookTotal += hookCounts[hk];
+      var toolBoundaryHooks = (hookCounts.pretool || 0) + (hookCounts.posttool || 0) + (hookCounts.posttool_fail || 0);
+      sessionRows.sort(function(a, b) {
+        return Number(b.event_count || 0) - Number(a.event_count || 0);
+      });
+      var densestSession = sessionRows[0] || null;
+
+      if (projectRows.length > 0 || telemetryRows.length > 0 || sessionRows.length > 0 || hookRows.length > 0) {
+        o += summaryGrid([
+          { value: percentLabel(topProjectLogs, totalProjectLogs), label: 'top 3 projects share' },
+          { value: percentLabel(toolBoundaryHooks, hookTotal), label: 'tool-boundary hooks' },
+          { value: percentLabel(executionTelemetryCount, totalTelemetryEvents), label: 'execution telemetry share' },
+          { value: densestSession ? numberFmt(densestSession.event_count) : '0', label: 'densest session events' }
+        ]);
+
+        var corrDigest = [];
+        if (projectRows.length > 0) {
+          corrDigest.push('Top three projects hold ' + percentLabel(topProjectLogs, totalProjectLogs) + ' of recorded agent and compaction logs.');
+        }
+        if (compactionLeader) {
+          corrDigest.push(cleanProjectName(compactionLeader.project) + ' has the highest compaction rate at ' + percentLabel(compactionLeader.compactions, compactionLeader.total) + ' across ' + numberFmt(compactionLeader.total) + ' logs.');
+        }
+        if (leadFamily) {
+          corrDigest.push('Telemetry is led by ' + leadFamily.family + ', and execution families together account for ' + percentLabel(executionTelemetryCount, totalTelemetryEvents) + '.');
+        }
+        if (hookTotal > 0) {
+          corrDigest.push('Local hooks are ' + percentLabel(toolBoundaryHooks, hookTotal) + ' tool boundaries, matching the execution-heavy state read.');
+        }
+        if (densestSession) {
+          var denseRate = eventsPerHour(densestSession.event_count, densestSession.first_seen, densestSession.last_seen);
+          var denseLine = 'Densest telemetry session: ' + durationLabel(densestSession.first_seen, densestSession.last_seen) + ', ' + numberFmt(densestSession.event_count) + ' events';
+          if (denseRate !== null) denseLine += ' at roughly ' + numberFmt(denseRate) + ' events per hour';
+          corrDigest.push(denseLine + '.');
+        }
+        o += patternBlock('cross-signal digest', corrDigest);
+      }
+
+      if (projectRows.length > 0) {
+        o += '<div class="note"><span class="pill">projects</span>Where agent and compaction load concentrates.</div>';
         var cprows = [];
-        for (var i = 0; i < corr.agents_per_project.length; i++) {
-          var cp = corr.agents_per_project[i];
-          cprows.push([esc(cp.project), cp.agents, cp.compactions, cp.total_messages]);
+        for (var i = 0; i < Math.min(projectRows.length, 8); i++) {
+          var cp = projectRows[i];
+          cprows.push([esc(cp.project), numberFmt(cp.total), numberFmt(cp.compactions), percentLabel(cp.compactions, cp.total), numberFmt(cp.total_messages)]);
         }
-        o += makeTable(['project', 'agents', 'compactions', 'messages'], cprows);
+        o += makeTable(['project', 'logs', 'compactions', 'compaction rate', 'messages'], cprows);
       }
 
-      if (corr.telemetry_by_type && corr.telemetry_by_type.length > 0) {
-        o += '<div style="font-size:10px;color:#8b949e;margin:12px 0 4px">telemetry event types</div>';
+      if (familyRows.length > 0) {
+        o += '<div class="note"><span class="pill">telemetry</span>Retained telemetry collapsed into the main families.</div>';
         var ttrows = [];
-        for (var i = 0; i < corr.telemetry_by_type.length; i++) {
-          var tt2 = corr.telemetry_by_type[i];
-          ttrows.push([esc(tt2.event), tt2.count]);
+        for (var i = 0; i < familyRows.length; i++) {
+          var family = familyRows[i];
+          ttrows.push([esc(family.family), numberFmt(family.count), percentLabel(family.count, totalTelemetryEvents)]);
         }
-        o += makeTable(['event', 'count'], ttrows);
+        o += makeTable(['family', 'count', 'share'], ttrows);
       }
 
-      if (corr.session_spans && corr.session_spans.length > 0) {
-        o += '<div style="font-size:10px;color:#8b949e;margin:12px 0 4px">session spans</div>';
+      if (sessionRows.length > 0) {
+        o += '<div class="note"><span class="pill">sessions</span>Densest telemetry sessions retained on disk.</div>';
         var ssrows = [];
-        for (var i = 0; i < corr.session_spans.length; i++) {
-          var sp = corr.session_spans[i];
-          ssrows.push(['<code>' + esc((sp.session_id || '').slice(0,8)) + '</code>', esc((sp.first_seen || '').slice(0,19)), esc((sp.last_seen || '').slice(0,19)), sp.event_count]);
+        for (var i = 0; i < Math.min(sessionRows.length, 8); i++) {
+          var sp = sessionRows[i];
+          var rate = eventsPerHour(sp.event_count, sp.first_seen, sp.last_seen);
+          ssrows.push([
+            '<code>' + esc((sp.session_id || '').slice(0,8)) + '</code>',
+            esc(durationLabel(sp.first_seen, sp.last_seen)),
+            numberFmt(sp.event_count),
+            rate === null ? 'n/a' : numberFmt(rate),
+            esc(timeLabel(sp.last_seen))
+          ]);
         }
-        o += makeTable(['session', 'first', 'last', 'events'], ssrows);
+        o += makeTable(['session', 'duration', 'events', 'events/hr', 'last seen'], ssrows);
+      }
+      if (projectRows.length === 0 && telemetryRows.length === 0 && sessionRows.length === 0 && hookRows.length === 0) {
+        o += emptyNote('no correlation data available yet');
       }
       o += '</div>';
     }
 
-    // === TASKS ===
-    if (tasks.length > 0) {
-      o += '<h2 onclick="tog(this)">tasks<span class="cnt">' + tasks.length + '</span></h2>';
-      o += '<div class="panel">';
-      var tkrows = [];
-      for (var i = 0; i < tasks.length; i++) {
-        var tk = tasks[i];
-        tkrows.push(['<code>' + esc((tk.session_id || '').slice(0,8)) + '</code>', esc(tk.subject), esc(tk.status)]);
+    o += '<h2 onclick="tog(this,\'tasks\')">tasks<span class="cnt">' + tasks.length + '</span></h2>';
+    o += '<div class="' + panelClass('tasks') + '">';
+    o += sourceNote('measured', 'Local task rows when Claude wrote task JSON files.');
+    o += softError('tasks', tasksRaw);
+    if (tasks.length === 0) {
+      o += emptyNote('no task files found');
+    } else {
+      var taskCounts = {};
+      var statusOrder = { in_progress: 0, pending: 1, completed: 2 };
+      var sortedTasks = tasks.slice().sort(function(a, b) {
+        var as = statusOrder.hasOwnProperty(a.status) ? statusOrder[a.status] : 9;
+        var bs = statusOrder.hasOwnProperty(b.status) ? statusOrder[b.status] : 9;
+        if (as !== bs) return as - bs;
+        return String(a.subject || '').localeCompare(String(b.subject || ''));
+      });
+      for (var i = 0; i < sortedTasks.length; i++) {
+        var status = sortedTasks[i].status || 'unknown';
+        taskCounts[status] = (taskCounts[status] || 0) + 1;
       }
-      o += makeTable(['session', 'subject', 'status'], tkrows);
-      o += '</div>';
+      o += summaryGrid([
+        { value: numberFmt(taskCounts.in_progress || 0), label: 'in progress' },
+        { value: numberFmt(taskCounts.pending || 0), label: 'pending' },
+        { value: numberFmt(taskCounts.completed || 0), label: 'completed' },
+        { value: numberFmt(tasks.length), label: 'task rows' }
+      ]);
+      var tkrows = [];
+      for (var i = 0; i < Math.min(sortedTasks.length, 12); i++) {
+        var tk = sortedTasks[i];
+        tkrows.push([esc(tk.status), esc(tk.subject), '<code>' + esc((tk.session_id || '').slice(0,8)) + '</code>']);
+      }
+      o += makeTable(['status', 'subject', 'session'], tkrows, 'no task files found');
     }
+    o += '</div>';
 
     app.innerHTML = o;
-    document.getElementById('gen').textContent = 'generated ' + new Date().toISOString().slice(0,19) + ' — db: ~/.harnesster/harnesster.db';
-  }).catch(function(err) {
-    app.innerHTML = '<div class="alert">failed to load dashboard data: ' + esc(err.message || err) + '</div>';
-    document.getElementById('gen').textContent = 'load failed';
+    var headerBits = [];
+    if (sum.device) headerBits.push('device ' + sum.device);
+    headerBits.push('db updated ' + timeLabel(sum.db_mtime));
+    headerBits.push('latest session activity ' + timeLabel(sum.latest_session_mtime));
+    headerBits.push('db: ~/.harnesster/harnesster.db');
+    document.getElementById('gen').textContent = headerBits.join(' — ');
   });
 }
 

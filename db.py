@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 import threading
 from datetime import datetime
@@ -21,11 +22,15 @@ from typing import Iterable, Iterator
 CLAUDE_DIR = Path.home() / ".claude"
 DB_PATH = Path.home() / ".harnesster" / "harnesster.db"
 MAX_MEMORY_FILE_BYTES = 5000
-MAX_REMINDER_CONTENT_BYTES = 2000
+MAX_REMINDER_CONTENT_BYTES = 4000
 MAX_MESSAGE_CONTENT_BYTES = 3000
+
+SYSTEM_REMINDER_TAG_RE = re.compile(r"<system-reminder>(.*?)</system-reminder>", re.IGNORECASE | re.DOTALL)
+SYSTEM_REMINDER_PREFIX_RE = re.compile(r"^\s*system-reminder\b[:\s-]*(.+?)\s*$", re.IGNORECASE | re.DOTALL)
 
 _schema_lock = threading.Lock()
 _schema_ready = False
+_ingest_lock = threading.Lock()
 
 
 def _db_path() -> Path:
@@ -34,6 +39,10 @@ def _db_path() -> Path:
 
 def _db_dir() -> Path:
     return _db_path().parent
+
+
+def _hook_log_path() -> Path:
+    return _db_dir() / "harness_log.jsonl"
 
 
 def _ensure_private_dir(path: Path) -> None:
@@ -122,7 +131,25 @@ def _normalize_content(content) -> str:
         parts = []
         for item in content:
             if isinstance(item, dict):
-                parts.append(str(item.get("text", item)))
+                if "text" in item:
+                    parts.append(str(item["text"]))
+                    continue
+                if item.get("type") == "tool_use":
+                    name = item.get("name", "tool_use")
+                    input_data = item.get("input")
+                    if input_data is None:
+                        parts.append(f"[tool_use] {name}")
+                    else:
+                        try:
+                            rendered = json.dumps(input_data, sort_keys=True)
+                        except TypeError:
+                            rendered = str(input_data)
+                        parts.append(f"[tool_use] {name} {rendered}")
+                    continue
+                try:
+                    parts.append(json.dumps(item, sort_keys=True))
+                except TypeError:
+                    parts.append(str(item))
             else:
                 parts.append(str(item))
         return " ".join(parts)
@@ -132,6 +159,55 @@ def _normalize_content(content) -> str:
         except TypeError:
             return str(content)
     return str(content)
+
+
+def _iter_message_text_chunks(content) -> Iterator[str]:
+    if isinstance(content, str):
+        yield content
+        return
+    if not isinstance(content, list):
+        return
+    for item in content:
+        if not isinstance(item, dict):
+            continue
+        text = item.get("content")
+        if isinstance(text, str):
+            yield text
+
+
+def _extract_system_reminder_text(text: str) -> str | None:
+    stripped = text.lstrip()
+    if stripped.lower().startswith("<system-reminder>"):
+        match = SYSTEM_REMINDER_TAG_RE.search(stripped)
+        if not match:
+            return None
+        reminder = match.group(1)
+    elif stripped.lower().startswith("system-reminder"):
+        match = SYSTEM_REMINDER_PREFIX_RE.match(stripped)
+        if not match:
+            return None
+        reminder = match.group(1)
+    else:
+        return None
+
+    reminder = reminder.replace("\r\n", "\n").replace("\r", "\n").strip()
+    return reminder[:MAX_REMINDER_CONTENT_BYTES] if reminder else None
+
+
+def _extract_system_reminder_entry(entry: dict) -> tuple[str, str] | None:
+    if entry.get("type") != "user":
+        return None
+
+    message = entry.get("message")
+    if not isinstance(message, dict) or message.get("role") != "user":
+        return None
+
+    for chunk in _iter_message_text_chunks(message.get("content")):
+        reminder = _extract_system_reminder_text(chunk)
+        if reminder:
+            return reminder, str(entry.get("timestamp", "") or "")
+
+    return None
 
 
 def get_db() -> sqlite3.Connection:
@@ -357,11 +433,12 @@ def _reload_agent_messages(conn: sqlite3.Connection, agent_id: int, transcript_p
                 if not line:
                     continue
                 try:
-                    msg = json.loads(line)
+                    outer = json.loads(line)
                 except json.JSONDecodeError:
                     continue
-                role = msg.get("role") or msg.get("type") or "?"
-                content = _normalize_content(msg.get("content", ""))[:MAX_MESSAGE_CONTENT_BYTES]
+                payload = outer.get("message") if isinstance(outer.get("message"), dict) else outer
+                role = payload.get("role") or payload.get("type") or outer.get("type") or "?"
+                content = _normalize_content(payload.get("content", ""))[:MAX_MESSAGE_CONTENT_BYTES]
                 parsed_messages.append((idx, str(role), content))
     except OSError:
         return -1
@@ -511,7 +588,6 @@ def ingest_sessions(conn: sqlite3.Connection) -> int:
         _delete_stale_sessions(conn, project_name, seen_session_ids)
         _delete_stale_memory_files(conn, project_name, seen_memory_files)
 
-    # Remove rows for projects no longer on disk.
     existing_projects = [row[0] for row in conn.execute("SELECT DISTINCT project FROM sessions").fetchall()]
     for project_name in existing_projects:
         if project_name in seen_projects:
@@ -528,7 +604,7 @@ def ingest_sessions(conn: sqlite3.Connection) -> int:
 
 
 def ingest_hooks(conn: sqlite3.Connection) -> int:
-    log_file = Path.home() / ".harnesster" / "harness_log.jsonl"
+    log_file = _hook_log_path()
     conn.execute("DELETE FROM hook_events")
 
     if not log_file.exists() or not _is_safe_regular_file(log_file):
@@ -601,7 +677,7 @@ def ingest_tasks(conn: sqlite3.Connection) -> int:
 
 
 def ingest_exports(conn: sqlite3.Connection) -> int:
-    """Parse raw JSONL transcripts for actual system-reminder injections."""
+    """Parse raw JSONL transcripts for live system-reminder injections."""
     proj_dir = CLAUDE_DIR / "projects"
     conn.execute("DELETE FROM system_reminders")
 
@@ -610,16 +686,23 @@ def ingest_exports(conn: sqlite3.Connection) -> int:
         return 0
 
     count = 0
-    timestamp = datetime.now().isoformat()
     for path in _walk_safe_files(proj_dir, ".jsonl"):
         try:
             with open(path, encoding="utf-8", errors="ignore") as fh:
                 for line_number, raw_line in enumerate(fh, start=1):
-                    if "system-reminder" not in raw_line or "NEVER mention" not in raw_line:
+                    if "system-reminder" not in raw_line:
                         continue
+                    try:
+                        entry = json.loads(raw_line)
+                    except json.JSONDecodeError:
+                        continue
+                    extracted = _extract_system_reminder_entry(entry)
+                    if not extracted:
+                        continue
+                    reminder_text, reminder_timestamp = extracted
                     conn.execute(
                         "INSERT INTO system_reminders (source_file, line_number, content, timestamp) VALUES (?, ?, ?, ?)",
-                        (str(path), line_number, raw_line.strip()[:MAX_REMINDER_CONTENT_BYTES], timestamp),
+                        (str(path), line_number, reminder_text, reminder_timestamp),
                     )
                     count += 1
         except OSError:
@@ -630,22 +713,23 @@ def ingest_exports(conn: sqlite3.Connection) -> int:
 
 
 def ingest_all() -> dict[str, int]:
-    conn = get_db()
-    try:
-        telemetry_count = ingest_telemetry(conn)
-        session_count = ingest_sessions(conn)
-        hook_count = ingest_hooks(conn)
-        task_count = ingest_tasks(conn)
-        reminder_count = ingest_exports(conn)
-        return {
-            "telemetry": telemetry_count,
-            "sessions": session_count,
-            "hooks": hook_count,
-            "tasks": task_count,
-            "reminders": reminder_count,
-        }
-    finally:
-        conn.close()
+    with _ingest_lock:
+        conn = get_db()
+        try:
+            telemetry_count = ingest_telemetry(conn)
+            session_count = ingest_sessions(conn)
+            hook_count = ingest_hooks(conn)
+            task_count = ingest_tasks(conn)
+            reminder_count = ingest_exports(conn)
+            return {
+                "telemetry": telemetry_count,
+                "sessions": session_count,
+                "hooks": hook_count,
+                "tasks": task_count,
+                "reminders": reminder_count,
+            }
+        finally:
+            conn.close()
 
 
 def query(sql: str, params: Iterable = ()) -> list[dict]:
@@ -662,6 +746,11 @@ def summary() -> dict:
         device_row = conn.execute(
             "SELECT MIN(device_id) FROM telemetry WHERE device_id IS NOT NULL AND device_id != ''"
         ).fetchone()
+        db_mtime = None
+        try:
+            db_mtime = datetime.fromtimestamp(_db_path().stat().st_mtime).isoformat()
+        except OSError:
+            db_mtime = None
         return {
             "telemetry": conn.execute("SELECT COUNT(*) FROM telemetry").fetchone()[0],
             "sessions": conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0],
@@ -672,6 +761,10 @@ def summary() -> dict:
             "hook_events": conn.execute("SELECT COUNT(*) FROM hook_events").fetchone()[0],
             "system_reminders": conn.execute("SELECT COUNT(*) FROM system_reminders").fetchone()[0],
             "device": device_row[0] if device_row else None,
+            "db_mtime": db_mtime,
+            "latest_hook_timestamp": conn.execute("SELECT MAX(timestamp) FROM hook_events").fetchone()[0],
+            "latest_telemetry_time": conn.execute("SELECT MAX(time) FROM telemetry").fetchone()[0],
+            "latest_session_mtime": conn.execute("SELECT MAX(mtime) FROM sessions").fetchone()[0],
         }
     finally:
         conn.close()

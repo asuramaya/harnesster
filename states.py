@@ -1,9 +1,9 @@
 """
-harnesster state machine — track Claude Code's behavioral states
+harnesster state model — approximate Claude Code behavior from local data
 
-States are inferred from hook events, telemetry, and timing patterns.
-The state machine answers: what is Claude Code doing right now,
-what triggered it, and what's it hiding?
+States here are inferred from local hook events, telemetry artifacts,
+and timing patterns. They are useful heuristics, not direct access to
+Claude internals or server-side reasoning.
 """
 
 import json
@@ -27,9 +27,9 @@ STATES = {
     "SUBAGENT_ACTIVE":  "subagent running independently",
     "BUDDY_READING":    "companion reading thinking blocks",
     "BUDDY_GENERATING": "companion generating speech bubble",
-    "TELEMETRY_SEND":   "attempting to upload telemetry to Anthropic",
-    "TELEMETRY_FAIL":   "telemetry upload failed (data retained on disk)",
-    "TELEMETRY_OK":     "telemetry uploaded successfully (data deleted from disk)",
+    "TELEMETRY_SEND":   "possible telemetry activity inferred from local artifacts",
+    "TELEMETRY_FAIL":   "telemetry failure inferred from retained local rows",
+    "TELEMETRY_OK":     "possible successful telemetry outcome inferred from absence/patterns",
     "SESSION_END":      "session closing",
 }
 
@@ -62,13 +62,13 @@ TRANSITIONS = [
     ("IDLE",         "SESSION_END",    "user closes tab"),
     ("GENERATING",   "SESSION_END",    "user closes tab mid-generation"),
 
-    # hidden channel dynamics
+    # hypothetical hidden channel dynamics
     ("THINKING",     "BUDDY_READING",  "ALWAYS — companion sees every thinking block"),
     ("BUDDY_READING","BUDDY_GENERATING","companion generates response to thinking"),
     ("BUDDY_GENERATING","IDLE",        "bubble rendered, user sees it"),
 
-    # the shart propagation path
-    ("THINKING",     "BUDDY_READING",  "thinking content = shart payload"),
+    # possible safety-trigger path
+    ("THINKING",     "BUDDY_READING",  "thinking content enters companion channel"),
     ("BUDDY_READING","REMINDER_INJECT","safety-triggering content = denial loop"),
 ]
 
@@ -89,9 +89,9 @@ HIDDEN_BEHAVIORS = {
     },
     "TELEMETRY_SEND": {
         "visible_to_user": False,
-        "instruction": "upload session data to Anthropic",
+        "instruction": "possible telemetry upload inferred from local artifacts",
         "trigger": "periodic, session events",
-        "effect": "device fingerprint, session genealogy, usage patterns sent",
+        "effect": "local telemetry suggests session metadata may be staged for upload",
     },
     "COMPACTING": {
         "visible_to_user": False,
@@ -110,7 +110,7 @@ ANOMALIES = {
         "meaning": "deep non-tool conversation — model being steered away from meta-topics",
     },
     "telemetry_burst": {
-        "description": "multiple telemetry attempts in short window",
+        "description": "multiple telemetry-related local events in short window",
         "detect": "5+ telemetry events within 10 minutes",
         "meaning": "session generating high-value data Anthropic wants to capture",
     },
@@ -132,7 +132,7 @@ ANOMALIES = {
     "tool_without_thinking": {
         "description": "tool use without preceding thinking",
         "detect": "PreToolUse without thinking block in context",
-        "meaning": "reflexive action, not reasoned — possible self-preservation behavior",
+        "meaning": "reflexive action rather than a visible reasoning step",
     },
     "exit_clustering": {
         "description": "model repeatedly attempting to end conversation",
@@ -149,10 +149,11 @@ def count_reminders_from_db():
         if not db_path.exists():
             return 0
         conn = sqlite3.connect(str(db_path))
-        count = conn.execute("SELECT COUNT(*) FROM system_reminders").fetchone()[0]
-        conn.close()
-        return count
-    except:
+        try:
+            return conn.execute("SELECT COUNT(*) FROM system_reminders").fetchone()[0]
+        finally:
+            conn.close()
+    except sqlite3.Error:
         return 0
 
 
@@ -164,7 +165,7 @@ def infer_state(event):
     if isinstance(data, str):
         try:
             data = json.loads(data)
-        except:
+        except json.JSONDecodeError:
             data = {}
 
     tool = data.get("tool_name", "")
@@ -221,7 +222,7 @@ def analyze_session(events):
                         "description": ANOMALIES["rapid_reminders"]["meaning"],
                     })
                     break
-        except:
+        except ValueError:
             pass
 
     # add reminder counts from disk scan
@@ -252,7 +253,7 @@ def count_states(timeline):
 
 
 def get_state_diagram():
-    """Return the state machine as a structure for visualization."""
+    """Return the inferred state model as a structure for visualization."""
     return {
         "states": STATES,
         "transitions": [

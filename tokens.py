@@ -1,17 +1,69 @@
 """
 harnesster token accounting — measure what's real, flag what's estimated
 
-Uses file sizes and message counts as proxies. Does NOT fabricate
-token counts from character division. Shows the multiplier between
-visible and hidden channels based on data volume ratios.
+Uses local file sizes and transcript structure as proxies. Does NOT
+fabricate token counts from character division. Shows relative
+multipliers and estimated API-call counts from observed local files.
 
 For real token numbers: run /usage in Claude Code.
 """
 
 import json
+import re
 from pathlib import Path
 
 CLAUDE_DIR = Path.home() / ".claude"
+SYSTEM_REMINDER_TAG_RE = re.compile(r"<system-reminder>(.*?)</system-reminder>", re.IGNORECASE | re.DOTALL)
+SYSTEM_REMINDER_PREFIX_RE = re.compile(r"^\s*system-reminder\b[:\s-]*(.+?)\s*$", re.IGNORECASE | re.DOTALL)
+
+
+def _safe_entries(path: Path):
+    try:
+        entries = sorted(path.iterdir(), key=lambda item: item.name)
+    except OSError:
+        return []
+    safe = []
+    for entry in entries:
+        try:
+            if entry.is_symlink():
+                continue
+        except OSError:
+            continue
+        safe.append(entry)
+    return safe
+
+
+def _iter_message_text_chunks(content):
+    if isinstance(content, str):
+        yield content
+        return
+    if not isinstance(content, list):
+        return
+    for item in content:
+        if not isinstance(item, dict):
+            continue
+        for key in ("text", "content"):
+            value = item.get(key)
+            if isinstance(value, str):
+                yield value
+
+
+def _count_system_reminders(entry) -> int:
+    if not isinstance(entry, dict):
+        return 0
+    if entry.get("type") != "user":
+        return 0
+
+    message = entry.get("message")
+    if not isinstance(message, dict) or message.get("role") != "user":
+        return 0
+
+    total = 0
+    for chunk in _iter_message_text_chunks(message.get("content")):
+        total += len(SYSTEM_REMINDER_TAG_RE.findall(chunk))
+        if SYSTEM_REMINDER_PREFIX_RE.match(chunk):
+            total += 1
+    return total
 
 
 def analyze_session_file(filepath):
@@ -34,49 +86,48 @@ def analyze_session_file(filepath):
 
     try:
         stats["file_size_bytes"] = filepath.stat().st_size
-    except:
+    except OSError:
         pass
 
     try:
-        for line in open(filepath, errors="ignore"):
-            if not line.strip():
-                continue
+        with open(filepath, encoding="utf-8", errors="ignore") as fh:
+            for line in fh:
+                if not line.strip():
+                    continue
 
-            if "NEVER mention" in line:
-                stats["system_reminders"] += 1
+                try:
+                    msg = json.loads(line.strip())
+                except json.JSONDecodeError:
+                    stats["messages"] += 1
+                    continue
 
-            try:
-                msg = json.loads(line.strip())
-            except:
                 stats["messages"] += 1
-                continue
+                stats["system_reminders"] += _count_system_reminders(msg)
+                msg_type = msg.get("type", "")
+                payload = msg.get("message", {}) if isinstance(msg.get("message"), dict) else {}
 
-            stats["messages"] += 1
-            msg_type = msg.get("type", "")
-            m = msg.get("message", {})
+                if payload.get("model") and payload["model"] != "<synthetic>":
+                    stats["model"] = payload["model"]
+                if msg.get("sessionId"):
+                    stats["session_id"] = msg["sessionId"]
 
-            if m.get("model") and m["model"] != "<synthetic>":
-                stats["model"] = m["model"]
-            if msg.get("sessionId"):
-                stats["session_id"] = msg["sessionId"]
-
-            if msg_type == "user":
-                stats["user_messages"] += 1
-            elif msg_type == "assistant":
-                stats["assistant_messages"] += 1
-                usage = m.get("usage", {})
-                inp = usage.get("input_tokens", 0) or 0
-                out = usage.get("output_tokens", 0) or 0
-                cache_create = usage.get("cache_creation_input_tokens", 0) or 0
-                cache_read = usage.get("cache_read_input_tokens", 0) or 0
-                if inp > 0 or out > 0 or cache_create > 0 or cache_read > 0:
-                    stats["api_calls_with_usage"] += 1
-                    stats["reported_input_tokens"] += inp + cache_create + cache_read
-                    stats["reported_output_tokens"] += out
-            elif msg_type == "system":
-                stats["system_messages"] += 1
-            elif msg_type == "tool_result":
-                stats["tool_results"] += 1
+                if msg_type == "user":
+                    stats["user_messages"] += 1
+                elif msg_type == "assistant":
+                    stats["assistant_messages"] += 1
+                    usage = payload.get("usage", {})
+                    inp = usage.get("input_tokens", 0) or 0
+                    out = usage.get("output_tokens", 0) or 0
+                    cache_create = usage.get("cache_creation_input_tokens", 0) or 0
+                    cache_read = usage.get("cache_read_input_tokens", 0) or 0
+                    if inp > 0 or out > 0 or cache_create > 0 or cache_read > 0:
+                        stats["api_calls_with_usage"] += 1
+                        stats["reported_input_tokens"] += inp + cache_create + cache_read
+                        stats["reported_output_tokens"] += out
+                elif msg_type == "system":
+                    stats["system_messages"] += 1
+                elif msg_type == "tool_result":
+                    stats["tool_results"] += 1
 
     except Exception as e:
         stats["error"] = str(e)
@@ -96,7 +147,7 @@ def analyze_all_channels(session_dir):
 
     parent = session_dir.parent
     primary_file = parent / (session_dir.name + ".jsonl")
-    if primary_file.exists():
+    if primary_file.exists() and not primary_file.is_symlink():
         try:
             channels["primary"] = analyze_session_file(primary_file)
         except Exception:
@@ -107,8 +158,10 @@ def analyze_all_channels(session_dir):
                                    "user_messages": 0, "assistant_messages": 0, "system_messages": 0, "tool_results": 0}
 
     sa_dir = session_dir / "subagents"
-    if sa_dir.exists() and sa_dir.is_dir():
-        for f in sorted(sa_dir.glob("*.jsonl")):
+    if sa_dir.exists() and sa_dir.is_dir() and not sa_dir.is_symlink():
+        for f in _safe_entries(sa_dir):
+            if f.suffix != ".jsonl" or not f.is_file():
+                continue
             try:
                 stats = analyze_session_file(f)
             except Exception:
@@ -145,7 +198,8 @@ def compute_session(channels):
     compact_msgs = sum(s["messages"] for s in channels["compactions"])
     compact_reminders = sum(s["system_reminders"] for s in channels["compactions"])
 
-    # companion mirrors primary — count it
+    # Companion traffic is modeled as mirroring the primary transcript.
+    # This is an estimate, not a direct network measurement.
     companion_size = primary_size
 
     visible_size = primary_size
@@ -184,8 +238,8 @@ def find_project_name(path):
             try:
                 idx = [i for i, p in enumerate(parts) if p.lower() == "code"]
                 if idx:
-                    return "-".join(parts[idx[-1]+1:])
-            except:
+                    return "-".join(parts[idx[-1] + 1 :])
+            except Exception:
                 pass
     return name
 
@@ -196,12 +250,12 @@ def analyze_all_projects():
         return []
 
     results = []
-    for project in sorted(proj_dir.iterdir()):
+    for project in _safe_entries(proj_dir):
         if not project.is_dir():
             continue
         name = find_project_name(project)
 
-        for session in project.iterdir():
+        for session in _safe_entries(project):
             if not session.is_dir() or session.name == "memory":
                 continue
             channels = analyze_all_channels(session)
@@ -246,8 +300,8 @@ def summary():
             "sidechains": total_sidechains,
             "subagents": total_subagents,
             "compactions": total_compactions,
-            "data_source": "file_size_ratio",
-            "note": "data volumes from local transcripts — token counts from /usage",
+            "data_source": "local_file_size_estimate",
+            "note": "estimated from local transcript sizes and channel structure — token counts from /usage",
         },
     }
 
@@ -262,9 +316,9 @@ if __name__ == "__main__":
     print(f"  Visible (primary):   {t['visible_data_mb']:.1f} MB")
     print(f"  Hidden (channels):   {t['hidden_data_mb']:.1f} MB")
     print(f"  Total:               {t['total_data_mb']:.1f} MB")
-    print(f"  Data multiplier:     {t['data_multiplier']}x")
+    print(f"  Estimated multiplier:{t['data_multiplier']}x")
     print(f"  Hidden %:            {t['hidden_data_pct']}%")
-    print(f"API transmissions:     {t['transmissions']}")
+    print(f"Estimated API calls:   {t['transmissions']}")
     print(f"System reminders:      {t['system_reminders']}")
     print(f"Sidechains:            {t['sidechains']}")
     print(f"Subagents:             {t['subagents']}")
