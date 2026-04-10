@@ -1,4 +1,4 @@
-# harnesster
+# neo
 
 <p align="center">
   <img src="neo.jpg" alt="Chronohorn" width="520">
